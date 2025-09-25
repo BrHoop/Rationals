@@ -7,6 +7,7 @@
 *.pkl
 *.h5
 *.curve
+.idea/*
 
 # Generated images/photos
 *.png
