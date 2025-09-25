@@ -114,7 +114,7 @@ def analytic_wave_solution(x: np.ndarray, time: float, params: Dict[str, float])
     x0 = float(params.get("id_x0", 0.5))
 
     # Try multiple common keys for domain length and speed; fall back to 1.0
-    L = float(params.get("x_max", 1.0)- float(params.get("x_min", -1.0)))
+    L = float(params.get("x_max", 1.0) - float(params.get("x_min", -1.0)))
     c = float(
         params.get("wave_speed",
         params.get("cfl",
@@ -123,7 +123,7 @@ def analytic_wave_solution(x: np.ndarray, time: float, params: Dict[str, float])
 
     # Number of periodic image copies to include on each side when summing the Gaussian
     # A small number (2-3) is typically sufficient because the Gaussian decays rapidly.
-    images = int(params.get("periodic_images", 2))
+    images = int(params.get("periodic_images", 1)) # Check what this is
 
     x = np.asarray(x, dtype=float)
 
