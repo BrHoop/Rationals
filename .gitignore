@@ -6,6 +6,7 @@
 *.npz
 *.pkl
 *.h5
+*.curve
 
 # Generated images/photos
 *.png
