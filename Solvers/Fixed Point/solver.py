@@ -70,10 +70,11 @@ def create_grid(params):
     x_min = to_fixed_scalar(params["x_min"])
     x_max = to_fixed_scalar(params["x_max"])
     dx = fixed_div_int(x_max - x_min, nx - 1)
-
-    x = np.zeros(nx, dtype=np.int64)
-    for i in range(nx):
-        x[i] = x_min + i * dx
+    x = np.linspace(x_min, x_max, nx, dtype=np.int64)
+    #x = np.zeros(nx, dtype=np.int64)
+    # Cant we just change this to linspace
+    # for i in range(nx):
+    #     x[i] = x_min + i * dx
     return x, dx
 
 

@@ -1,18 +1,24 @@
 #!/usr/bin/env python3
-"""Run two solver scripts, time them, and compare their outputs."""
+"""Run solver scripts, time them, and compare their outputs with error plots."""
 
 import argparse
 import os
 import subprocess
 import sys
 import tempfile
-import tomllib
 import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Tuple
 
+import tomllib
+
 import numpy as np
+
+import matplotlib
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
 
 
 @dataclass
@@ -21,10 +27,12 @@ class SolverResult:
     solver_path: Path
     parfile: Path
     runtime: float
+    times: np.ndarray
     final_time: float
-    variables: Dict[str, Tuple[np.ndarray, np.ndarray]]
-    l2_errors: Dict[str, float]
-    linf_errors: Dict[str, float]
+    grid: np.ndarray
+    variables: tuple[str, ...]
+    l2_history: Dict[str, np.ndarray]
+    linf_history: Dict[str, np.ndarray]
 
 
 def resolve_paths(solver: str, parfile: str | None) -> Tuple[Path, Path]:
@@ -87,20 +95,69 @@ def linf_norm(values: np.ndarray) -> float:
 
 
 def analytic_wave_solution(x: np.ndarray, time: float, params: Dict[str, float]) -> Dict[str, np.ndarray]:
-    amp = params.get("id_amp", 1.0)
-    omega = params.get("id_omega", 1.0)
-    x0 = params.get("id_x0", 0.5)
+    """
+    Analytic solution for the 1D wave equation with *periodic* boundary conditions.
 
-    def profile(x_values: np.ndarray) -> np.ndarray:
-        return amp * np.exp(-omega * (x_values - x0) ** 2)
+    The initial data is a Gaussian centered at x0, periodized over a domain of length L.
+    Left- and right-traveling components move at speed c.
 
-    left_travel = profile(x - time)
-    right_travel = profile(x + time)
+    Expected (optional) parameters in `params` with reasonable fallbacks:
+      - id_amp (float): amplitude of the Gaussian (default 1.0)
+      - id_omega (float): Gaussian sharpness parameter (default 1.0)
+      - id_x0 (float): initial center (default 0.5)
+      - domain_length or L or id_L (float): periodic domain length (default 1.0)
+      - wave_speed or c or id_c (float): wave speed (default 1.0)
+      - periodic_images (int): number of image copies on each side for periodization (default 2)
+    """
+    amp = float(params.get("id_amp", 1.0))
+    omega = float(params.get("id_omega", 1.0))
+    x0 = float(params.get("id_x0", 0.5))
 
+    # Try multiple common keys for domain length and speed; fall back to 1.0
+    L = float(params.get("x_max", 1.0)- float(params.get("x_min", -1.0)))
+    c = float(
+        params.get("wave_speed",
+        params.get("cfl",
+        params.get("id_c", 1.0)))
+    )
+
+    # Number of periodic image copies to include on each side when summing the Gaussian
+    # A small number (2-3) is typically sufficient because the Gaussian decays rapidly.
+    images = int(params.get("periodic_images", 2))
+
+    x = np.asarray(x, dtype=float)
+
+    def periodized_profile(x_values: np.ndarray) -> np.ndarray:
+        xv = np.asarray(x_values, dtype=float)
+        out = np.zeros_like(xv, dtype=float)
+        # Sum over image copies to enforce periodicity
+        for m in range(-images, images + 1):
+            out += amp * np.exp(-omega * (xv - x0 - m * L) ** 2)
+        return out
+
+    # Left- and right-moving waves with speed c on a periodic domain
+    left_travel = periodized_profile(x - c * time)
+    right_travel = periodized_profile(x + c * time)
+
+    # Standard first-order reduction variables (Phi, Pi) for the wave equation
     phi = 0.5 * (left_travel + right_travel)
     pi = 0.5 * (left_travel - right_travel)
 
     return {"Phi": phi, "Pi": pi}
+
+
+def aggregate_error(history: Dict[str, np.ndarray]) -> np.ndarray:
+    if not history:
+        raise ValueError("Cannot aggregate empty history")
+    stacked = np.vstack([errors for _, errors in sorted(history.items())])
+    return np.sqrt(np.mean(stacked ** 2, axis=0))
+
+
+def max_error(history: Dict[str, np.ndarray]) -> np.ndarray:
+    if not history:
+        raise ValueError("Cannot aggregate empty history")
+    stacked = np.vstack([errors for _, errors in sorted(history.items())])
+    return np.max(stacked, axis=0)
 
 
 def run_solver(name: str, solver_path: Path, parfile: Path) -> SolverResult:
@@ -127,76 +184,239 @@ def run_solver(name: str, solver_path: Path, parfile: Path) -> SolverResult:
         if not curve_files:
             raise FileNotFoundError(f"No curve files produced by solver {solver_path}")
 
-        final_time, variables = parse_curve_file(curve_files[-1])
-
         with parfile.open("rb") as pf:
             params = tomllib.load(pf)
 
-        if not variables:
-            raise ValueError(f"No variables parsed from solver output for {solver_path}")
+        times: list[float] = []
+        l2_history: Dict[str, list[float]] = {}
+        linf_history: Dict[str, list[float]] = {}
+        tracked_vars: tuple[str, ...] | None = None
+        reference_x: np.ndarray | None = None
 
-        reference_x = next(iter(variables.values()))[0]
-        analytic = analytic_wave_solution(reference_x, final_time, params)
-
-        l2_errors: Dict[str, float] = {}
-        linf_errors: Dict[str, float] = {}
-
-        for var, (x_values, data_values) in variables.items():
-            if var not in analytic:
+        for curve_file in curve_files:
+            current_time, variables = parse_curve_file(curve_file)
+            if not variables:
                 continue
-            if len(x_values) != len(reference_x) or not np.allclose(x_values, reference_x):
-                raise ValueError(
-                    f"Variable {var} from {solver_path} has grid mismatch for analytic comparison"
-                )
-            diff = data_values - analytic[var]
-            l2_errors[var] = l2_norm(diff)
-            linf_errors[var] = linf_norm(diff)
+
+            file_reference_x = next(iter(variables.values()))[0]
+            if reference_x is None:
+                reference_x = file_reference_x
+            else:
+                if len(file_reference_x) != len(reference_x) or not np.allclose(
+                    file_reference_x, reference_x
+                ):
+                    raise ValueError(
+                        f"Grid mismatch detected in solver output for {solver_path} ({curve_file})"
+                    )
+
+            if reference_x is None:
+                continue
+
+            analytic = analytic_wave_solution(reference_x, current_time, params)
+            available_vars = sorted(set(variables.keys()) & set(analytic.keys()))
+
+            if tracked_vars is None:
+                if not available_vars:
+                    continue
+                tracked_vars = tuple(available_vars)
+                for key in tracked_vars:
+                    l2_history[key] = []
+                    linf_history[key] = []
+            else:
+                missing = [var for var in tracked_vars if var not in variables]
+                if missing:
+                    raise ValueError(
+                        f"Variables {missing} missing in solver output {curve_file} from {solver_path}"
+                    )
+
+            for var in tracked_vars or ():
+                if var not in analytic:
+                    raise ValueError(
+                        f"Analytic solution does not provide variable {var}"
+                    )
+                x_values, data_values = variables[var]
+                if len(x_values) != len(reference_x) or not np.allclose(x_values, reference_x):
+                    raise ValueError(
+                        f"Variable {var} from {solver_path} has grid mismatch for analytic comparison"
+                    )
+                diff = data_values - analytic[var]
+                l2_history[var].append(l2_norm(diff))
+                linf_history[var].append(linf_norm(diff))
+
+            if tracked_vars is not None:
+                times.append(current_time)
+
+        if not times:
+            raise ValueError(f"No usable curve data produced by solver {solver_path}")
+        if tracked_vars is None or reference_x is None:
+            raise ValueError(
+                f"No analytic comparison could be performed for solver {solver_path}"
+            )
+
+        times_array = np.array(times)
+        sort_idx = np.argsort(times_array)
+        times_array = times_array[sort_idx]
+        l2_history_array = {var: np.array(values)[sort_idx] for var, values in l2_history.items()}
+        linf_history_array = {var: np.array(values)[sort_idx] for var, values in linf_history.items()}
+        final_time = float(times_array[-1])
 
     return SolverResult(
         name=name,
         solver_path=solver_path,
         parfile=parfile,
         runtime=runtime,
+        times=times_array,
         final_time=final_time,
-        variables=variables,
-        l2_errors=l2_errors,
-        linf_errors=linf_errors,
+        grid=reference_x,
+        variables=tracked_vars,
+        l2_history=l2_history_array,
+        linf_history=linf_history_array,
     )
 
+
+def plot_error_history(
+    results: list[SolverResult],
+    histories: Dict[str, np.ndarray],
+    *,
+    ylabel: str,
+    filename: str,
+) -> Path:
+    if not histories:
+        raise ValueError("No error data available to plot.")
+
+    fig, ax = plt.subplots()
+    styles = ["x","o","."]
+    for result, style in zip(results, styles):
+        values = histories.get(result.name)
+        if values is None:
+            continue
+        if values.size != result.times.size:
+            raise ValueError(
+                f"Error history for solver {result.name} does not match its time samples"
+            )
+        ax.plot(result.times, values, style, label=f"Solver {result.name}")
+
+    ax.set_xlabel("Time")
+    ax.set_ylabel(ylabel)
+    ax.set_title(f"{ylabel} over Time")
+    ax.grid(True, linestyle="--", linewidth=0.5, alpha=0.7)
+    ax.legend()
+    fig.tight_layout()
+
+    output_path = Path(filename).resolve()
+    fig.savefig(output_path, dpi=150)
+    plt.close(fig)
+
+    return output_path
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Run two solver scripts, time them, and compare their outputs.",
+        description="Run solver scripts, time them, and compare their outputs.",
     )
-    parser.add_argument("solver_a", help="Path to the first solver script")
-    parser.add_argument("solver_b", help="Path to the second solver script")
+    parser.add_argument(
+        "solvers",
+        nargs="+",
+        help="Paths to the solver scripts (provide two or three).",
+    )
     parser.add_argument("--parfile", dest="parfile", help="Override parfile for both solvers")
     args = parser.parse_args()
 
-    solver_a_path, parfile_a = resolve_paths(args.solver_a, args.parfile)
-    solver_b_path, parfile_b = resolve_paths(args.solver_b, args.parfile)
+    solver_count = len(args.solvers)
+    if solver_count < 2 or solver_count > 3:
+        parser.error("Please provide two or three solver scripts to compare.")
 
-    result_a = run_solver("A", solver_a_path, parfile_a)
-    result_b = run_solver("B", solver_b_path, parfile_b)
+    solver_specs: list[tuple[str, Path, Path]] = []
+    for idx, solver_arg in enumerate(args.solvers):
+        name = chr(ord("A") + idx)
+        solver_path, parfile_path = resolve_paths(solver_arg, args.parfile)
+        solver_specs.append((name, solver_path, parfile_path))
+
+    results: list[SolverResult] = []
+    for name, solver_path, parfile_path in solver_specs:
+        print(f"[Info] Running Solver {name}: {solver_path}")
+        results.append(run_solver(name, solver_path, parfile_path))
+
+    label_suffix = "".join(result.name for result in results)
+
+    variable_sets = [set(result.l2_history.keys()) for result in results if result.l2_history]
+    if not variable_sets:
+        raise ValueError("No variables available for analytic comparison across solvers")
+
+    common_vars = tuple(sorted(set.intersection(*variable_sets)))
+    if not common_vars:
+        raise ValueError("No common variables across solvers for analytic comparison")
+
+    # aggregated_l2 = {
+    #     result.name: aggregate_error({var: result.l2_history[var] for var in common_vars})
+    #     for result in results
+    # }
+    # aggregated_linf = {
+    #     result.name: max_error({var: result.linf_history[var] for var in common_vars})
+    #     for result in results
+    # }
+    phi_l2 = {
+        result.name: aggregate_error({ "Phi" :result.l2_history["Phi"]})
+        for result in results
+    }
+    pi_l2 = {
+        result.name: aggregate_error({ "Pi" :result.l2_history["Pi"]})
+        for result in results
+    }
+    phi_linf = {
+        result.name: max_error({ "Phi" :result.l2_history["Phi"]})
+        for result in results
+    }
+    pi_linf = {
+        result.name: max_error({ "Pi" :result.l2_history["Pi"]})
+        for result in results
+    }
+    l2_plot_phi = plot_error_history(
+        results,
+        phi_l2,
+        ylabel="L2 Error vs Analytic [phi]",
+        filename=f"solver_l2_errors_phi.png",
+    )
+    l2_plot_pi = plot_error_history(
+        results,
+        pi_l2,
+        ylabel="L2 Error vs Analytic [pi]",
+        filename=f"solver_l2_errors_pi.png",
+    )
+    linf_plot_phi = plot_error_history(
+        results,
+        phi_linf,
+        ylabel="Linf Error vs Analytic [phi]",
+        filename=f"solver_linf_errors_phi.png",
+    )
+    linf_plot_pi = plot_error_history(
+        results,
+        pi_linf,
+        ylabel="Linf Error vs Analytic [pi]",
+        filename=f"solver_linf_errors_pi.png",
+    )
 
     def report(result: SolverResult) -> None:
         print(f"Solver {result.name}: {result.solver_path}")
         print(f"  Parfile: {result.parfile}")
         print(f"  Runtime: {result.runtime:.3f} s")
         print(f"  Final time: {result.final_time:.6e}")
-        if result.l2_errors:
-            print("  L2 errors vs analytic:")
-            for var, err in sorted(result.l2_errors.items()):
-                print(f"    {var}: {err:.6e}")
-        if result.linf_errors:
-            print("  Linf errors vs analytic:")
-            for var, err in sorted(result.linf_errors.items()):
-                print(f"    {var}: {err:.6e}")
+        if common_vars:
+            print(f"  Variables compared: {', '.join(common_vars)}")
+        final_l2 = phi_l2[result.name][-1]
+        final_linf = phi_linf[result.name][-1]
+        print(f"  Final combined L2 error: {final_l2:.6e}")
+        print(f"  Final combined Linf error: {final_linf:.6e}")
         print()
 
-    report(result_a)
-    report(result_b)
+    for result in results:
+        report(result)
+
+    print("[Info] Errors computed against the analytic solution.")
+    print(f"[Info] L2 error plot saved to: {l2_plot_pi}")
+    print(f"[Info] Linf error plot saved to: {linf_plot_pi}")
+    print(f"[Info] L2 error plot saved to: {l2_plot_phi}")
+    print(f"[Info] Linf error plot saved to: {linf_plot_phi}")
 
 
 if __name__ == "__main__":

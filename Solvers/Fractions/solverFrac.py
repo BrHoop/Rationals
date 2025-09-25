@@ -82,7 +82,7 @@ def l2norm(u):
     arr = np.array([float(val) for val in u])
     return math.sqrt(np.mean(arr ** 2))
 
-def main(parfile):
+def main(parfile, outfile):
     # Read parameters
     with open(parfile, "rb") as f:
         params = tomllib.load(f)
@@ -103,7 +103,7 @@ def main(parfile):
     time = fc(0)
 
     iter = 0
-    fname = f"data_{iter:04d}.curve"
+    fname = f"{outfile}data_{iter:04d}.curve"
     write_curve(fname, time, x, u_names, u)
 
     freq = params.get("output_frequency", 1)
@@ -115,13 +115,14 @@ def main(parfile):
         if i % freq == 0:
             print(f"Step {i:d}, t={float(time):.2e}, "
                   f"|Phi|={l2norm(u[0]):.2e}, |Pi|={l2norm(u[1]):.2e}")
-            fname = f"PB_data_frac{i:04d}.curve"
+            fname = f"{outfile}PB_data_frac{i:04d}.curve"
             write_curve(fname, time, x, u_names, u)
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
+    if len(sys.argv) != 3:
         print("Usage:  python solver.py <parfile>")
         sys.exit(1)
 
     parfile = sys.argv[1]
-    main(parfile)
+    outfile = sys.argv[2]
+    main(parfile, outfile)
