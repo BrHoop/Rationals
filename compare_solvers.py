@@ -121,19 +121,27 @@ def analytic_wave_solution(x: np.ndarray, time: float, params: Dict[str, float])
         params.get("id_c", 1.0))#
     )
 
-    # Number of periodic image copies to include on each side when summing the Gaussian
-    # A small number (2-3) is typically sufficient because the Gaussian decays rapidly.
-    images = int(params.get("periodic_images", 2)) # Check what this is
+    # Periodization control: either sum a few image copies ("sum") or use
+    # a nearest-image wrap via modular arithmetic ("nearest"). The latter avoids
+    # the costly image loop and is exact for a compactly supported profile and a
+    # very accurate approximation for Gaussians when tails are small relative to L.
+    periodization_mode = str(params.get("periodization", "nearest")).lower()
+    images = int(params.get("periodic_images", 3))  # only used if mode == "sum"
 
     x = np.asarray(x, dtype=float)
 
     def periodized_profile(x_values: np.ndarray) -> np.ndarray:
         xv = np.asarray(x_values, dtype=float)
-        out = np.zeros_like(xv, dtype=float)
-        # Sum over image copies to enforce periodicity
-        for m in range(-images, images + 1):
-            out += amp * np.exp(-omega * (xv - x0 - m * L) ** 2)
-        return out
+        if periodization_mode == "sum":
+            out = np.zeros_like(xv, dtype=float)
+            # Sum over a small number of images to enforce periodicity
+            for m in range(-images, images + 1):
+                out += amp * np.exp(-omega * (xv - x0 - m * L) ** 2)
+            return out
+        # "nearest" mode: wrap coordinate into the base cell using minimal-image distance
+        # This avoids the O(images) loop and is typically sufficient for validation plots.
+        d = ((xv - x0 + 0.5 * L) % L) - 0.5 * L
+        return amp * np.exp(-omega * d ** 2)
 
     # Left- and right-moving waves with speed c on a periodic domain
     left_travel = periodized_profile(x - c * time)
@@ -141,10 +149,43 @@ def analytic_wave_solution(x: np.ndarray, time: float, params: Dict[str, float])
 
     # Standard first-order reduction variables (Phi, Pi) for the wave equation
     phi = 0.5 * (left_travel + right_travel)
-    pi = 0.5 * (left_travel - right_travel)
+    pi = -0.5 * (left_travel - right_travel)
 
     return {"Phi": phi, "Pi": pi}
 
+def create_grid(params):
+    x_min = params["x_min"]
+    x_max = params["x_max"]
+    nx = params["nx"]
+    dx = (x_max - x_min) / (nx -1)
+    x = np.zeros(nx)
+    for i in range(nx):
+        x[i] = x_min + i*dx
+    return x, dx
+
+def output_curves_for_analytica(params: Dict[str, float]):
+    nt = params['nt']
+    x, dx = create_grid(params)
+    time = 0.0
+    dt = params["cfl"] * dx
+    freq = params.get("output_frequency", 1)
+    for i in range(nt+1):
+        values = analytic_wave_solution(x, time, params)
+        if (i % freq) == 0:
+            fname = f"data_{i:04d}.curve"
+            write_curve(fname, time, x, ["Phi","Pi"], list(values.values()))
+        time += dt
+
+
+
+
+def write_curve(filename, time, x, u_names, u):
+    with open(filename, "w") as f:
+        f.write(f"# TIME {time}\n")
+        for m in range(len(u_names)):
+            f.write(f"# {u_names[m]}\n")
+            for xi, di in zip(x, u[m]):
+                f.write(f"{xi:.8e} {di:.8e}\n")
 
 def aggregate_error(history: Dict[str, np.ndarray]) -> np.ndarray:
     if not history:
@@ -285,7 +326,7 @@ def plot_error_history(
         raise ValueError("No error data available to plot.")
 
     fig, ax = plt.subplots()
-    styles = ["x","o","."]
+    styles = [".",".","."]
     for result, style in zip(results, styles):
         values = histories.get(result.name)
         if values is None:
@@ -336,7 +377,7 @@ def main() -> None:
     for name, solver_path, parfile_path in solver_specs:
         print(f"[Info] Running Solver {name}: {solver_path}")
         results.append(run_solver(name, solver_path, parfile_path))
-
+    #output_curves_for_analytica(params)
     label_suffix = "".join(result.name for result in results)
 
     variable_sets = [set(result.l2_history.keys()) for result in results if result.l2_history]
@@ -413,8 +454,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    except Exception as exc:  # noqa: BLE001
-        print(f"Error: {exc}", file=sys.stderr)
-        sys.exit(1)
+    main()
