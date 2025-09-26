@@ -347,14 +347,6 @@ def main() -> None:
     if not common_vars:
         raise ValueError("No common variables across solvers for analytic comparison")
 
-    # aggregated_l2 = {
-    #     result.name: aggregate_error({var: result.l2_history[var] for var in common_vars})
-    #     for result in results
-    # }
-    # aggregated_linf = {
-    #     result.name: max_error({var: result.linf_history[var] for var in common_vars})
-    #     for result in results
-    # }
     phi_l2 = {
         result.name: aggregate_error({ "Phi" :result.l2_history["Phi"]})
         for result in results
@@ -371,7 +363,7 @@ def main() -> None:
         result.name: max_error({ "Pi" :result.l2_history["Pi"]})
         for result in results
     }
-    phi_l2 = {result.name: result.l2_history["Phi"] for result in results}
+    #TODO make it so the analytical solution can output wave files so I can check if everything is working correctly.
     l2_plot_phi = plot_error_history(
         results,
         phi_l2,
