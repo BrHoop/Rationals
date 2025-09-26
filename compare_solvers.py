@@ -117,13 +117,13 @@ def analytic_wave_solution(x: np.ndarray, time: float, params: Dict[str, float])
     L = float(params.get("x_max", 1.0) - float(params.get("x_min", -1.0)))
     c = float(
         params.get("wave_speed",
-        params.get("cfl",
-        params.get("id_c", 1.0)))
+        # params.get("cfl",
+        params.get("id_c", 1.0))#
     )
 
     # Number of periodic image copies to include on each side when summing the Gaussian
     # A small number (2-3) is typically sufficient because the Gaussian decays rapidly.
-    images = int(params.get("periodic_images", 1)) # Check what this is
+    images = int(params.get("periodic_images", 2)) # Check what this is
 
     x = np.asarray(x, dtype=float)
 
@@ -371,6 +371,7 @@ def main() -> None:
         result.name: max_error({ "Pi" :result.l2_history["Pi"]})
         for result in results
     }
+    phi_l2 = {result.name: result.l2_history["Phi"] for result in results}
     l2_plot_phi = plot_error_history(
         results,
         phi_l2,
