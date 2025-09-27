@@ -2,16 +2,17 @@
 """Run solver scripts, time them, and compare their outputs with error plots."""
 
 import argparse
+import ast
+import itertools
 import os
 import subprocess
 import sys
 import tempfile
 import time
-from dataclasses import dataclass
+from collections import OrderedDict
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, Tuple
-
-import tomllib
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
@@ -31,11 +32,13 @@ class SolverResult:
     final_time: float
     grid: np.ndarray
     variables: tuple[str, ...]
-    l2_history: Dict[str, np.ndarray]
-    linf_history: Dict[str, np.ndarray]
+    data_history: Dict[str, np.ndarray]
+    refinement_level: int = 0
+    l2_history: Dict[str, np.ndarray] = field(default_factory=dict)
+    linf_history: Dict[str, np.ndarray] = field(default_factory=dict)
 
 
-def resolve_paths(solver: str, parfile: str | None) -> Tuple[Path, Path]:
+def resolve_paths(solver: str, parfile: Optional[str]) -> Tuple[Path, Path]:
     solver_path = Path(solver).expanduser().resolve()
     if not solver_path.exists():
         raise FileNotFoundError(f"Solver script not found: {solver}")
@@ -49,9 +52,9 @@ def resolve_paths(solver: str, parfile: str | None) -> Tuple[Path, Path]:
 
 
 def parse_curve_file(path: Path) -> Tuple[float, Dict[str, Tuple[np.ndarray, np.ndarray]]]:
-    final_time: float | None = None
+    final_time: Optional[float] = None
     variables: Dict[str, Tuple[np.ndarray, np.ndarray]] = {}
-    current_name: str | None = None
+    current_name: Optional[str] = None
     xs: list[float] = []
     values: list[float] = []
 
@@ -86,107 +89,6 @@ def parse_curve_file(path: Path) -> Tuple[float, Dict[str, Tuple[np.ndarray, np.
     return final_time, variables
 
 
-def l2_norm(values: np.ndarray) -> float:
-    return float(np.sqrt(np.mean(values ** 2)))
-
-
-def linf_norm(values: np.ndarray) -> float:
-    return float(np.max(np.abs(values)))
-
-
-def analytic_wave_solution(x: np.ndarray, time: float, params: Dict[str, float]) -> Dict[str, np.ndarray]:
-    """
-    Analytic solution for the 1D wave equation with *periodic* boundary conditions.
-
-    The initial data is a Gaussian centered at x0, periodized over a domain of length L.
-    Left- and right-traveling components move at speed c.
-
-    Expected (optional) parameters in `params` with reasonable fallbacks:
-      - id_amp (float): amplitude of the Gaussian (default 1.0)
-      - id_omega (float): Gaussian sharpness parameter (default 1.0)
-      - id_x0 (float): initial center (default 0.5)
-      - domain_length or L or id_L (float): periodic domain length (default 1.0)
-      - wave_speed or c or id_c (float): wave speed (default 1.0)
-      - periodic_images (int): number of image copies on each side for periodization (default 2)
-    """
-    amp = float(params.get("id_amp", 1.0))
-    omega = float(params.get("id_omega", 1.0))
-    x0 = float(params.get("id_x0", 0.5))
-
-    # Try multiple common keys for domain length and speed; fall back to 1.0
-    L = float(params.get("x_max", 1.0) - float(params.get("x_min", -1.0)))
-    c = float(
-        params.get("wave_speed",
-        # params.get("cfl",
-        params.get("id_c", 1.0))#
-    )
-
-    # Periodization control: either sum a few image copies ("sum") or use
-    # a nearest-image wrap via modular arithmetic ("nearest"). The latter avoids
-    # the costly image loop and is exact for a compactly supported profile and a
-    # very accurate approximation for Gaussians when tails are small relative to L.
-    periodization_mode = str(params.get("periodization", "nearest")).lower()
-    images = int(params.get("periodic_images", 3))  # only used if mode == "sum"
-
-    x = np.asarray(x, dtype=float)
-
-    def periodized_profile(x_values: np.ndarray) -> np.ndarray:
-        xv = np.asarray(x_values, dtype=float)
-        if periodization_mode == "sum":
-            out = np.zeros_like(xv, dtype=float)
-            # Sum over a small number of images to enforce periodicity
-            for m in range(-images, images + 1):
-                out += amp * np.exp(-omega * (xv - x0 - m * L) ** 2)
-            return out
-        # "nearest" mode: wrap coordinate into the base cell using minimal-image distance
-        # This avoids the O(images) loop and is typically sufficient for validation plots.
-        d = ((xv - x0 + 0.5 * L) % L) - 0.5 * L
-        return amp * np.exp(-omega * d ** 2)
-
-    # Left- and right-moving waves with speed c on a periodic domain
-    left_travel = periodized_profile(x - c * time)
-    right_travel = periodized_profile(x + c * time)
-
-    # Standard first-order reduction variables (Phi, Pi) for the wave equation
-    phi = 0.5 * (left_travel + right_travel)
-    pi = -0.5 * (left_travel - right_travel)
-
-    return {"Phi": phi, "Pi": pi}
-
-def create_grid(params):
-    x_min = params["x_min"]
-    x_max = params["x_max"]
-    nx = params["nx"]
-    dx = (x_max - x_min) / (nx -1)
-    x = np.zeros(nx)
-    for i in range(nx):
-        x[i] = x_min + i*dx
-    return x, dx
-
-def output_curves_for_analytica(params: Dict[str, float]):
-    nt = params['nt']
-    x, dx = create_grid(params)
-    time = 0.0
-    dt = params["cfl"] * dx
-    freq = params.get("output_frequency", 1)
-    for i in range(nt+1):
-        values = analytic_wave_solution(x, time, params)
-        if (i % freq) == 0:
-            fname = f"data_{i:04d}.curve"
-            write_curve(fname, time, x, ["Phi","Pi"], list(values.values()))
-        time += dt
-
-
-
-
-def write_curve(filename, time, x, u_names, u):
-    with open(filename, "w") as f:
-        f.write(f"# TIME {time}\n")
-        for m in range(len(u_names)):
-            f.write(f"# {u_names[m]}\n")
-            for xi, di in zip(x, u[m]):
-                f.write(f"{xi:.8e} {di:.8e}\n")
-
 def aggregate_error(history: Dict[str, np.ndarray]) -> np.ndarray:
     if not history:
         raise ValueError("Cannot aggregate empty history")
@@ -201,7 +103,141 @@ def max_error(history: Dict[str, np.ndarray]) -> np.ndarray:
     return np.max(stacked, axis=0)
 
 
-def run_solver(name: str, solver_path: Path, parfile: Path) -> SolverResult:
+def read_parfile(path: Path) -> "OrderedDict[str, Any]":
+    params: "OrderedDict[str, Any]" = OrderedDict()
+    for raw_line in path.read_text().splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if "=" not in line:
+            continue
+        key, raw_value = line.split("=", 1)
+        key = key.strip()
+        value = raw_value.split("#", 1)[0].strip()
+        if not value:
+            continue
+        try:
+            params[key] = ast.literal_eval(value)
+        except (ValueError, SyntaxError):
+            params[key] = value
+    return params
+
+
+def write_parfile(path: Path, params: "OrderedDict[str, Any]") -> None:
+    with path.open("w") as fh:
+        for key, value in params.items():
+            fh.write(f"{key} = {repr(value)}\n")
+
+
+def refined_parameters(
+    base_params: "OrderedDict[str, Any]",
+    *,
+    level: int,
+    factor: int,
+) -> "OrderedDict[str, Any]":
+    if level < 0:
+        raise ValueError("Refinement level must be non-negative")
+    if factor < 1:
+        raise ValueError("Refinement factor must be at least 1")
+
+    params = OrderedDict(base_params.items())
+    if level == 0:
+        return params
+
+    intervals = int(base_params["nx"]) - 1
+    if intervals <= 0:
+        raise ValueError("nx must be at least 2 in the base parfile")
+
+    scaled = factor ** level
+    params["nx"] = intervals * scaled + 1
+
+    base_nt = int(base_params["nt"])
+    params["nt"] = base_nt * scaled
+
+    base_freq = int(base_params.get("output_frequency", 1))
+    params["output_frequency"] = max(1, base_freq * scaled)
+
+    return params
+
+
+def grid_refinement_ratio(fine_size: int, coarse_size: int) -> int:
+    if fine_size < coarse_size:
+        raise ValueError("Reference grid must be at least as fine as target grid")
+    fine_intervals = fine_size - 1
+    coarse_intervals = max(1, coarse_size - 1)
+    if fine_intervals % coarse_intervals != 0:
+        raise ValueError("Grids are not nested by an integer refinement factor")
+    return fine_intervals // coarse_intervals
+
+
+def compare_histories_between_levels(
+    coarse: SolverResult,
+    fine: SolverResult,
+    *,
+    ratio: int,
+    variables: Tuple[str, ...],
+) -> Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray]]:
+    if ratio < 1:
+        raise ValueError("Ratio must be a positive integer")
+
+    if coarse.times.size == 0 or fine.times.size == 0:
+        raise ValueError("No time samples available for comparison")
+
+    shared = min(coarse.times.size, fine.times.size)
+    if shared == 0:
+        raise ValueError("No overlapping time samples between refinement levels")
+
+    if not np.allclose(
+        coarse.times[:shared],
+        fine.times[:shared],
+        rtol=1e-5,
+        atol=1e-8,
+    ):
+        max_diff = float(
+            np.max(np.abs(coarse.times[:shared] - fine.times[:shared]))
+        )
+        raise ValueError(
+            "Time samples do not align between refinement levels "
+            f"(max difference {max_diff:.3e})"
+        )
+
+    l2_histories: Dict[str, np.ndarray] = {}
+    linf_histories: Dict[str, np.ndarray] = {}
+
+    for var in variables:
+        coarse_data = coarse.data_history[var]
+        fine_data = fine.data_history[var]
+        if ratio == 1:
+            downsampled = fine_data
+        else:
+            downsampled = fine_data[:, ::ratio]
+
+        min_len = min(coarse_data.shape[0], downsampled.shape[0])
+        if min_len == 0:
+            raise ValueError(
+                f"Variable {var} has no overlapping time samples after downsampling"
+            )
+
+        coarse_slice = coarse_data[:min_len]
+        fine_slice = downsampled[:min_len]
+        if coarse_slice.shape != fine_slice.shape:
+            raise ValueError(
+                f"Variable {var} does not downsample cleanly (ratio {ratio})"
+            )
+        diff = coarse_slice - fine_slice
+        l2_histories[var] = np.sqrt(np.mean(diff ** 2, axis=1))
+        linf_histories[var] = np.max(np.abs(diff), axis=1)
+
+    return l2_histories, linf_histories
+
+
+def run_solver(
+    name: str,
+    solver_path: Path,
+    parfile: Path,
+    *,
+    refinement_level: int = 0,
+) -> SolverResult:
     with tempfile.TemporaryDirectory(prefix=f"{solver_path.stem}_output_") as tmpdir:
         output_dir = Path(tmpdir)
         output_arg = str(output_dir) + os.sep
@@ -225,14 +261,10 @@ def run_solver(name: str, solver_path: Path, parfile: Path) -> SolverResult:
         if not curve_files:
             raise FileNotFoundError(f"No curve files produced by solver {solver_path}")
 
-        with parfile.open("rb") as pf:
-            params = tomllib.load(pf)
-
         times: list[float] = []
-        l2_history: Dict[str, list[float]] = {}
-        linf_history: Dict[str, list[float]] = {}
-        tracked_vars: tuple[str, ...] | None = None
-        reference_x: np.ndarray | None = None
+        variable_samples: Dict[str, list[np.ndarray]] = {}
+        tracked_vars: Optional[Tuple[str, ...]] = None
+        reference_x: Optional[np.ndarray] = None
 
         for curve_file in curve_files:
             current_time, variables = parse_curve_file(curve_file)
@@ -250,19 +282,12 @@ def run_solver(name: str, solver_path: Path, parfile: Path) -> SolverResult:
                         f"Grid mismatch detected in solver output for {solver_path} ({curve_file})"
                     )
 
-            if reference_x is None:
-                continue
-
-            analytic = analytic_wave_solution(reference_x, current_time, params)
-            available_vars = sorted(set(variables.keys()) & set(analytic.keys()))
-
+            available_vars = sorted(variables.keys())
             if tracked_vars is None:
                 if not available_vars:
                     continue
                 tracked_vars = tuple(available_vars)
-                for key in tracked_vars:
-                    l2_history[key] = []
-                    linf_history[key] = []
+                variable_samples = {var: [] for var in tracked_vars}
             else:
                 missing = [var for var in tracked_vars if var not in variables]
                 if missing:
@@ -271,18 +296,14 @@ def run_solver(name: str, solver_path: Path, parfile: Path) -> SolverResult:
                     )
 
             for var in tracked_vars or ():
-                if var not in analytic:
-                    raise ValueError(
-                        f"Analytic solution does not provide variable {var}"
-                    )
                 x_values, data_values = variables[var]
+                if reference_x is None:
+                    continue
                 if len(x_values) != len(reference_x) or not np.allclose(x_values, reference_x):
                     raise ValueError(
-                        f"Variable {var} from {solver_path} has grid mismatch for analytic comparison"
+                        f"Variable {var} from {solver_path} has grid mismatch across outputs"
                     )
-                diff = data_values - analytic[var]
-                l2_history[var].append(l2_norm(diff))
-                linf_history[var].append(linf_norm(diff))
+                variable_samples[var].append(np.array(data_values, copy=True))
 
             if tracked_vars is not None:
                 times.append(current_time)
@@ -291,14 +312,16 @@ def run_solver(name: str, solver_path: Path, parfile: Path) -> SolverResult:
             raise ValueError(f"No usable curve data produced by solver {solver_path}")
         if tracked_vars is None or reference_x is None:
             raise ValueError(
-                f"No analytic comparison could be performed for solver {solver_path}"
+                f"No variable data could be collected for solver {solver_path}"
             )
 
         times_array = np.array(times)
         sort_idx = np.argsort(times_array)
         times_array = times_array[sort_idx]
-        l2_history_array = {var: np.array(values)[sort_idx] for var, values in l2_history.items()}
-        linf_history_array = {var: np.array(values)[sort_idx] for var, values in linf_history.items()}
+        data_history = {
+            var: np.stack(values, axis=0)[sort_idx]
+            for var, values in variable_samples.items()
+        }
         final_time = float(times_array[-1])
 
     return SolverResult(
@@ -310,8 +333,8 @@ def run_solver(name: str, solver_path: Path, parfile: Path) -> SolverResult:
         final_time=final_time,
         grid=reference_x,
         variables=tracked_vars,
-        l2_history=l2_history_array,
-        linf_history=linf_history_array,
+        refinement_level=refinement_level,
+        data_history=data_history,
     )
 
 
@@ -326,8 +349,8 @@ def plot_error_history(
         raise ValueError("No error data available to plot.")
 
     fig, ax = plt.subplots()
-    styles = [".",".","."]
-    for result, style in zip(results, styles):
+    marker_cycle = itertools.cycle(["o", "s", "^", "d", "x", "*", "."])
+    for result in results:
         values = histories.get(result.name)
         if values is None:
             continue
@@ -335,7 +358,13 @@ def plot_error_history(
             raise ValueError(
                 f"Error history for solver {result.name} does not match its time samples"
             )
-        ax.plot(result.times, values, style, label=f"Solver {result.name}")
+        marker = next(marker_cycle)
+        ax.plot(
+            result.times,
+            values,
+            marker=marker,
+            label=f"Solver {result.name}",
+        )
 
     ax.set_xlabel("Time")
     ax.set_ylabel(ylabel)
@@ -360,85 +389,204 @@ def main() -> None:
         nargs="+",
         help="Paths to the solver scripts (provide two or three).",
     )
-    parser.add_argument("--parfile", dest="parfile", help="Override parfile for both solvers")
+    parser.add_argument("--parfile", dest="parfile", help="Override parfile for all solvers")
+    parser.add_argument(
+        "--refine-factor",
+        type=int,
+        default=2,
+        help="Grid refinement multiplier per level for the reference solver (>= 2).",
+    )
+    parser.add_argument(
+        "--convergence-tol",
+        type=float,
+        default=1e-4,
+        help="Target aggregate L2 difference between successive refinements.",
+    )
+    parser.add_argument(
+        "--max-refinements",
+        type=int,
+        default=4,
+        help="Maximum additional refinement levels for the reference solver.",
+    )
+    parser.add_argument(
+        "--reference-index",
+        type=int,
+        default=0,
+        help="Zero-based index of the solver to refine for the reference solution.",
+    )
     args = parser.parse_args()
 
     solver_count = len(args.solvers)
     if solver_count < 2 or solver_count > 3:
         parser.error("Please provide two or three solver scripts to compare.")
 
-    solver_specs: list[tuple[str, Path, Path]] = []
+    if args.reference_index < 0 or args.reference_index >= solver_count:
+        parser.error(
+            f"Reference index must be between 0 and {solver_count - 1} (received {args.reference_index})."
+        )
+
+    if args.max_refinements < 0:
+        parser.error("Maximum refinements must be non-negative.")
+
+    if args.max_refinements > 0 and args.refine_factor < 2:
+        parser.error("Refinement factor must be >= 2 when refinements are requested.")
+
+    solver_specs: List[Tuple[str, Path, Path]] = []
+    base_params: List[OrderedDict[str, Any]] = []
     for idx, solver_arg in enumerate(args.solvers):
         name = chr(ord("A") + idx)
         solver_path, parfile_path = resolve_paths(solver_arg, args.parfile)
         solver_specs.append((name, solver_path, parfile_path))
+        base_params.append(read_parfile(parfile_path))
 
-    results: list[SolverResult] = []
+    results: List[SolverResult] = []
     for name, solver_path, parfile_path in solver_specs:
         print(f"[Info] Running Solver {name}: {solver_path}")
-        results.append(run_solver(name, solver_path, parfile_path))
-    #output_curves_for_analytica(params)
-    label_suffix = "".join(result.name for result in results)
+        results.append(
+            run_solver(name, solver_path, parfile_path, refinement_level=0)
+        )
 
-    variable_sets = [set(result.l2_history.keys()) for result in results if result.l2_history]
+    if not results:
+        raise ValueError("No solver results were produced.")
+
+    reference_index = args.reference_index
+    reference_spec = solver_specs[reference_index]
+    reference_base_params = base_params[reference_index]
+    reference_result = results[reference_index]
+    previous_result = reference_result
+    reference_refinement_level = 0
+    convergence_reached = False
+    last_difference = 0.0
+
+    for level in range(1, args.max_refinements + 1):
+        params_level = refined_parameters(
+            reference_base_params,
+            level=level,
+            factor=args.refine_factor,
+        )
+        with tempfile.TemporaryDirectory(prefix="refine_parfile_") as tmpdir:
+            refined_parfile = Path(tmpdir) / "parfile"
+            write_parfile(refined_parfile, params_level)
+            refined_result = run_solver(
+                reference_spec[0],
+                reference_spec[1],
+                refined_parfile,
+                refinement_level=level,
+            )
+
+        shared_vars = tuple(
+            sorted(
+                set(previous_result.data_history.keys())
+                & set(refined_result.data_history.keys())
+            )
+        )
+        if not shared_vars:
+            raise ValueError(
+                f"No common variables between refinement levels for solver {reference_spec[0]}"
+            )
+
+        ratio = grid_refinement_ratio(refined_result.grid.size, previous_result.grid.size)
+        l2_diff, linf_diff = compare_histories_between_levels(
+            previous_result,
+            refined_result,
+            ratio=ratio,
+            variables=shared_vars,
+        )
+        aggregate = aggregate_error(l2_diff)
+        linf_aggregate = max_error(linf_diff)
+        last_difference = float(aggregate[-1])
+        last_linf = float(linf_aggregate[-1])
+        print(
+            f"[Info] Solver {reference_spec[0]} refinement level {level}: "
+            f"aggregate L2 diff = {last_difference:.3e}, "
+            f"aggregate Linf diff = {last_linf:.3e}"
+        )
+
+        reference_result = refined_result
+        reference_refinement_level = level
+        if last_difference <= args.convergence_tol:
+            convergence_reached = True
+            break
+
+        previous_result = refined_result
+
+    reference_result.parfile = reference_spec[2]
+
+    variable_sets = [set(result.data_history.keys()) for result in results if result.data_history]
+    variable_sets.append(set(reference_result.data_history.keys()))
     if not variable_sets:
-        raise ValueError("No variables available for analytic comparison across solvers")
+        raise ValueError("No variables available for convergence comparison across solvers")
 
     common_vars = tuple(sorted(set.intersection(*variable_sets)))
     if not common_vars:
-        raise ValueError("No common variables across solvers for analytic comparison")
+        raise ValueError("No common variables across solvers for convergence comparison")
 
-    phi_l2 = {
-        result.name: aggregate_error({ "Phi" :result.l2_history["Phi"]})
-        for result in results
-    }
-    pi_l2 = {
-        result.name: aggregate_error({ "Pi" :result.l2_history["Pi"]})
-        for result in results
-    }
-    phi_linf = {
-        result.name: max_error({ "Phi" :result.l2_history["Phi"]})
-        for result in results
-    }
-    pi_linf = {
-        result.name: max_error({ "Pi" :result.l2_history["Pi"]})
-        for result in results
-    }
-    #TODO make it so the analytical solution can output wave files so I can check if everything is working correctly.
-    l2_plot_phi = plot_error_history(
-        results,
-        phi_l2,
-        ylabel="L2 Error vs Analytic [phi]",
-        filename=f"solver_l2_errors_phi.png",
-    )
-    l2_plot_pi = plot_error_history(
-        results,
-        pi_l2,
-        ylabel="L2 Error vs Analytic [pi]",
-        filename=f"solver_l2_errors_pi.png",
-    )
-    linf_plot_phi = plot_error_history(
-        results,
-        phi_linf,
-        ylabel="Linf Error vs Analytic [phi]",
-        filename=f"solver_linf_errors_phi.png",
-    )
-    linf_plot_pi = plot_error_history(
-        results,
-        pi_linf,
-        ylabel="Linf Error vs Analytic [pi]",
-        filename=f"solver_linf_errors_pi.png",
-    )
+    per_var_l2 = {var: {} for var in common_vars}
+    per_var_linf = {var: {} for var in common_vars}
+    combined_l2: Dict[str, np.ndarray] = {}
+    combined_linf: Dict[str, np.ndarray] = {}
+    grid_ratios: Dict[str, int] = {}
+
+    for result in results:
+        ratio = grid_refinement_ratio(reference_result.grid.size, result.grid.size)
+        grid_ratios[result.name] = ratio
+        l2_hist, linf_hist = compare_histories_between_levels(
+            result,
+            reference_result,
+            ratio=ratio,
+            variables=common_vars,
+        )
+        result.l2_history = l2_hist
+        result.linf_history = linf_hist
+        if l2_hist:
+            first_key = next(iter(l2_hist))
+            aligned_length = l2_hist[first_key].shape[0]
+            result.times = result.times[:aligned_length]
+        combined_l2[result.name] = aggregate_error(result.l2_history)
+        combined_linf[result.name] = max_error(result.linf_history)
+        for var in common_vars:
+            per_var_l2[var][result.name] = result.l2_history[var]
+            per_var_linf[var][result.name] = result.linf_history[var]
+
+    phi_l2_plot = phi_linf_plot = None
+    if "Phi" in per_var_l2:
+        phi_l2_plot = plot_error_history(
+            results,
+            per_var_l2["Phi"],
+            ylabel="L2 Error vs Reference [Phi]",
+            filename="solver_l2_errors_phi.png",
+        )
+        phi_linf_plot = plot_error_history(
+            results,
+            per_var_linf["Phi"],
+            ylabel="Linf Error vs Reference [Phi]",
+            filename="solver_linf_errors_phi.png",
+        )
+
+    pi_l2_plot = pi_linf_plot = None
+    if "Pi" in per_var_l2:
+        pi_l2_plot = plot_error_history(
+            results,
+            per_var_l2["Pi"],
+            ylabel="L2 Error vs Reference [Pi]",
+            filename="solver_l2_errors_pi.png",
+        )
+        pi_linf_plot = plot_error_history(
+            results,
+            per_var_linf["Pi"],
+            ylabel="Linf Error vs Reference [Pi]",
+            filename="solver_linf_errors_pi.png",
+        )
 
     def report(result: SolverResult) -> None:
         print(f"Solver {result.name}: {result.solver_path}")
         print(f"  Parfile: {result.parfile}")
         print(f"  Runtime: {result.runtime:.3f} s")
         print(f"  Final time: {result.final_time:.6e}")
-        if common_vars:
-            print(f"  Variables compared: {', '.join(common_vars)}")
-        final_l2 = phi_l2[result.name][-1]
-        final_linf = phi_linf[result.name][-1]
+        print(f"  Grid refinement ratio vs reference: {grid_ratios[result.name]:d}x")
+        print(f"  Variables compared: {', '.join(common_vars)}")
+        final_l2 = combined_l2[result.name][-1]
+        final_linf = combined_linf[result.name][-1]
         print(f"  Final combined L2 error: {final_l2:.6e}")
         print(f"  Final combined Linf error: {final_linf:.6e}")
         print()
@@ -446,11 +594,30 @@ def main() -> None:
     for result in results:
         report(result)
 
-    print("[Info] Errors computed against the analytic solution.")
-    print(f"[Info] L2 error plot saved to: {l2_plot_pi}")
-    print(f"[Info] Linf error plot saved to: {linf_plot_pi}")
-    print(f"[Info] L2 error plot saved to: {l2_plot_phi}")
-    print(f"[Info] Linf error plot saved to: {linf_plot_phi}")
+    if args.max_refinements == 0:
+        print(
+            f"[Info] Reference solver {reference_spec[0]} uses the base resolution (no refinements requested)."
+        )
+    elif convergence_reached:
+        print(
+            f"[Info] Reference solver {reference_spec[0]} converged at level {reference_refinement_level} "
+            f"with aggregate L2 difference {last_difference:.3e} (tolerance {args.convergence_tol:.3e})."
+        )
+    else:
+        print(
+            f"[Warn] Reference solver {reference_spec[0]} did not reach the tolerance within "
+            f"{args.max_refinements} refinements; using level {reference_refinement_level} "
+            f"with final aggregate L2 difference {last_difference:.3e}."
+        )
+
+    if phi_l2_plot is not None:
+        print(f"[Info] Phi L2 error plot saved to: {phi_l2_plot}")
+    if phi_linf_plot is not None:
+        print(f"[Info] Phi Linf error plot saved to: {phi_linf_plot}")
+    if pi_l2_plot is not None:
+        print(f"[Info] Pi L2 error plot saved to: {pi_l2_plot}")
+    if pi_linf_plot is not None:
+        print(f"[Info] Pi Linf error plot saved to: {pi_linf_plot}")
 
 
 if __name__ == "__main__":
