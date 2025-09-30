@@ -187,5 +187,5 @@ if __name__ == "__main__":
     if len(sys.argv) != 3:
         print("Usage:  python solver.py <parfile> <output_path>")
         sys.exit(1)
-
-    main(sys.argv[1], sys.argv[2])
+    with(jax.profiler.trace('/Users/isaacsudweeks/Library/CloudStorage/OneDrive-BrighamYoungUniversity/Personal Projects/Rationals/profiles')):
+        main(sys.argv[1], sys.argv[2])
