@@ -3,6 +3,7 @@ import jax.numpy as jnp
 from jax import jit
 import tomllib
 import sys
+import tensorflow as tf
 jax.config.update("jax_enable_x64", True)
 
 def create_grid(params):
