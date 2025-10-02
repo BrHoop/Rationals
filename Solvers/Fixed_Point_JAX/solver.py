@@ -1,5 +1,8 @@
 import sys
-import tomllib
+try:
+    import tomllib
+except ModuleNotFoundError:
+    import tomli as tomllib
 import jax
 import jax.numpy as jnp
 from jax import jit
@@ -187,5 +190,5 @@ if __name__ == "__main__":
     if len(sys.argv) != 3:
         print("Usage:  python solver.py <parfile> <output_path>")
         sys.exit(1)
-    with(jax.profiler.trace('/Users/isaacsudweeks/Library/CloudStorage/OneDrive-BrighamYoungUniversity/Personal Projects/Rationals/profiles')):
+    with(jax.profiler.trace('/home/isuds/Gravity/Rationals/profiles')):
         main(sys.argv[1], sys.argv[2])

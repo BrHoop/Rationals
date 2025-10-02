@@ -7,3 +7,4 @@ notebook
 numpy
 tensorflow
 xprof
+tensorboard

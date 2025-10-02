@@ -128,5 +128,5 @@ if __name__ == "__main__":
 
     parfile = sys.argv[1]
     output_path = sys.argv[2]
-    with jax.profiler.trace('/Users/isaacsudweeks/Library/CloudStorage/OneDrive-BrighamYoungUniversity/Personal Projects/Rationals/profiles'):
+    with jax.profiler.trace('/home/isuds/Gravity/Rationals/profiles'):
         main(parfile, output_path)
