@@ -1,5 +1,7 @@
 import os
+import sys
 import tomllib
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '/Users/isaacsudweeks/Library/CloudStorage/OneDrive-BrighamYoungUniversity/Personal Projects/Rationals')))
 import utils.ioxdmf as iox
 from numba import njit
 
@@ -39,7 +41,6 @@ class Grid2D(Grid):
 
         dx = (xmax - xmin) / (nx - 1)
         dy = (ymax - ymin) / (ny - 1)
-
         ng = params.get("NGhost", 0)
         nx = nx + 2 * ng
         ny = ny + 2 * ng
@@ -60,8 +61,8 @@ class Grid2D(Grid):
 
 def grad_x(u,g:Grid2D):
     dudx = np.zeros_like(u)
-    idx_by_2 = 1.0 / (2*g.dx)
-    idx_by_12 = 1.0 / (12 * g.dx)
+    idx_by_2 = 1.0 / (2*g.dx[0])
+    idx_by_12 = 1.0 / (12 * g.dx[0])
 
     #center stencil
     dudx[2:-2, :] = (-u[4:, :] + 8 * u[3:-1, :] - 8 * u[1:-3, :] + u[:-4, :]) * idx_by_12
@@ -76,8 +77,8 @@ def grad_x(u,g:Grid2D):
 
 def grad_y(u,g:Grid2D):
     dudy = np.zeros_like(u)
-    idy_by_2 = 1.0 / (2 * g.dy)
-    idy_by_12 = 1.0 / (12 * g.dy)
+    idy_by_2 = 1.0 / (2 * g.dx[1])
+    idy_by_12 = 1.0 / (12 * g.dx[1])
 
     # center stencil
     dudy[:, 2:-2] = (
@@ -94,26 +95,20 @@ def grad_y(u,g:Grid2D):
 
 
 def grad_xx(u,g):
-    idx_sqrd = 1.0 / g.dx**2
+    idx_sqrd = 1.0 / g.dx[0]**2
     idx_sqrd_by_12 = idx_sqrd / 12.0
-
     dxxu = np.zeros_like(u)
-    dxxu[2:-2, :] = (
-                            -u[4:, :] + 16 * u[3:-1, :] - 30 * u[2:-2, :] + 16 * u[1:-3, :] - u[0:-4, :]
-                    ) * idx_sqrd_by_12
-
+    dxxu[2:-2, :] = (-u[4:, :] + 16 * u[3:-1, :] - 30 * u[2:-2, :] + 16 * u[1:-3, :] - u[0:-4, :]) * idx_sqrd_by_12
     # boundary stencils
     dxxu[0, :] = (2 * u[0, :] - 5 * u[1, :] + 4 * u[2, :] - u[3, :]) * idx_sqrd
     dxxu[1, :] = (u[0, :] - 2 * u[1, :] + u[2, :]) * idx_sqrd
     dxxu[-2, :] = (u[-3, :] - 2 * u[-2, :] + u[-1, :]) * idx_sqrd
-    dxxu[-1, :] = (
-                          -u[-4, :] + 4 * u[-3, :] - 5 * u[-2, :] + 2 * u[-1, :]
-                  ) * idx_sqrd
+    dxxu[-1, :] = (-u[-4, :] + 4 * u[-3, :] - 5 * u[-2, :] + 2 * u[-1, :]) * idx_sqrd
     return dxxu
 
 
 def grad_yy(u,g):
-    idy_sqrd = 1.0 / g.dy**2
+    idy_sqrd = 1.0 / g.dx[1]**2
     idy_sqrd_by_12 = idy_sqrd / 12.0
     dyyu = np.zeros_like(u)
 
@@ -198,8 +193,6 @@ def bc_reflect(phi, chi):
     chi[:, 0] = (4.0 * chi[:, 1] - chi[:, 2]) / 3.0
     chi[:, -1] = (4.0 * chi[:, -2] - chi[:, -3]) / 3.0
 
-
-@njit
 def bc_sommerfeld(dtf, f, dxf, dyf, falloff, ngz, x, y, Nx, Ny):
     for j in range(Ny):
         for i in range(ngz):
@@ -276,5 +269,10 @@ def main(parfile):
     iox.write_xdmf(output_dir, Nt, g.shp[0], g.shp[1], func_names, output_interval, dt)
 
 
-
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Usage:  python solver.py <parfile>")
+        sys.exit(1)
+    parfile = sys.argv[1]
+    main(parfile)
 

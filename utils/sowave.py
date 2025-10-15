@@ -2,8 +2,8 @@ import numpy as np
 from numba import njit
 import sys
 import os
-from eqs import *
-from grid import *
+from utils.eqs import *
+from utils.grid import *
 
 
 class ScalarField(Equations):

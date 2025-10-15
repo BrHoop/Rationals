@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 import numpy as np
-import utils.finitederivs as fd
+
 
 class Grid(ABC):
     """
@@ -20,26 +20,6 @@ class Grid(ABC):
         self.Filter = []
         self.nghost = nghost
 
-    @abstractmethod
-    def set_D1(self, d1):
-        """
-        Set the first derivative operator.
-        """
-        pass
-
-    @abstractmethod
-    def set_D2(self, d2):
-        """
-        Set the second derivative operator.
-        """
-        pass
-
-    @abstractmethod
-    def set_filter(self, filter):
-        """
-        Set the filter operator.
-        """
-        pass
 
     def get_shape(self):
         """
@@ -104,9 +84,4 @@ class Grid2D(Grid):
         #print(f"Grid2D: {shp}, {xi}, {dxn}")
         super().__init__(shp, xi, dxn, ng)
 
-    def set_D1(self, d1: fd.FirstDerivative2D):
-        self.D1 = d1
-
-    def set_D2(self, d2: fd.SecondDerivative2D):
-        self.D2 = d2
 
