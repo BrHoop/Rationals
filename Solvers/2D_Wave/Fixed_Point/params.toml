@@ -16,3 +16,5 @@ bound_cond = "REFLECT"
 
 output_dir = "output_sowave"
 output_interval = 5
+
+frac_bits = 24
