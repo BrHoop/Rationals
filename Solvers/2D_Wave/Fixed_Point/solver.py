@@ -129,7 +129,6 @@ def grad_yy(u,g):
     dyyu[:, -1] = g.f.fixed_mul((-u[:, -4] + 4 * u[:, -3] - 5 * u[:, -2] + 2 * u[:, -1]), idy_sqrd)
     return dyyu
 
-#TODO: Start here and finish the ScalarField class
 class ScalarField(Equations):
     def __init__(self, NU, g: Grid2D, bctype):
         if bctype == "SOMMERFELD":
@@ -147,6 +146,7 @@ class ScalarField(Equations):
         self.U_CHI = 1
 
     def rhs(self, dtu, u, g: Grid2D):
+        #TODO this seems like it is good, but check it.
         dtphi = dtu[0]
         dtchi = dtu[1]
         phi = u[0]
@@ -173,29 +173,35 @@ class ScalarField(Equations):
     def initialize(self, g: Grid2D, params):
         x = g.xi[0]
         y = g.xi[1]
+
+        #All this stuff is in FP 64 and then is converted
         x0, y0 = params["id_x0"], params["id_y0"]
         amp, sigma = params["id_amp"], params["id_sigma"]
         X, Y = np.meshgrid(x, y, indexing="ij")
-        self.u[0][:, :] = np.exp(-((X - x0) ** 2 + (Y - y0) ** 2) / (2 * sigma**2))
-        self.u[1][:, :] = 0.0
+        profile = np.exp(-((X - x0) ** 2 + (Y - y0) ** 2) / (2 * sigma**2))
+        self.u[0][:, :] = g.f.to_fixed_array(profile)
+        self.u[1][:, :] = 0
 
     def apply_bcs(self, u, g: Grid2D):
         if self.bound_cond == "REFLECT":
-            bc_reflect(u[0], u[1])
+            bc_reflect(u[0], u[1],g)
 
 
-def bc_reflect(phi, chi):
+def bc_reflect(phi, chi,g):
     # Reflective boundary conditions
-    phi[0, :] = 0.0
-    phi[-1, :] = 0.0
-    phi[:, 0] = 0.0
-    phi[:, -1] = 0.0
+    phi[0, :] = 0
+    phi[-1, :] = 0
+    phi[:, 0] = 0
+    phi[:, -1] = 0
 
-    chi[0, :] = (4.0 * chi[1, :] - chi[2, :]) / 3.0
-    chi[-1, :] = (4.0 * chi[-2, :] - chi[-3, :]) / 3.0
-    chi[:, 0] = (4.0 * chi[:, 1] - chi[:, 2]) / 3.0
-    chi[:, -1] = (4.0 * chi[:, -2] - chi[:, -3]) / 3.0
+    three = g.f.to_fixed_scalar(3)
 
+    chi[0, :] = g.f.fixed_div((4 * chi[1, :] - chi[2, :]), three)
+    chi[-1, :] = g.f.fixed_div((4 * chi[-2, :] - chi[-3, :]), three)
+    chi[:, 0] = g.f.fixed_div((4 * chi[:, 1] - chi[:, 2]), three)
+    chi[:, -1] = g.f.fixed_div((4 * chi[:, -2] - chi[:, -3]),three)
+
+#TODO: Switch this one later it is STILL FP64
 def bc_sommerfeld(dtf, f, dxf, dyf, falloff, ngz, x, y, Nx, Ny):
     for j in range(Ny):
         for i in range(ngz):
@@ -220,20 +226,20 @@ def bc_sommerfeld(dtf, f, dxf, dyf, falloff, ngz, x, y, Nx, Ny):
 
 def rk2(eqs, g, dt):
     nu = len(eqs.u)
+    half_dt = g.f.fixed_div(dt, g.f.to_fixed_scalar(0.5))
 
     up = []
     k1 = []
-    for i in range(nu):
-        ux = np.empty_like(eqs.u[0], dtype=object)
-        kx = np.empty_like(eqs.u[0], dtype=object)
-        up.append(ux)
-        k1.append(kx)
+    for _ in range(nu):
+        up.append(np.empty_like(eqs.u[0], dtype=object))
+        k1.append(np.empty_like(eqs.u[0], dtype=object))
     eqs.rhs(k1, eqs.u ,g)
     for i in range(nu):
-        up[i][:] = eqs.u[i][:] + 0.5 * dt * k1[i][:]
+        up[i][:] = eqs.u[i][:] + g.f.fixed_mul(half_dt,k1[i][:])
+        up[i][:] = eqs.u[i][:] + g.f.fixed_mul(half_dt,k1[i][:])
     eqs.rhs(k1, up, g)
     for i in range(nu):
-        eqs.u[i][:] = eqs.u[i][:] + dt * k1[i][:]
+        eqs.u[i][:] = eqs.u[i][:] + g.f.fixed_mul(k1[i][:], dt)
 
 
 def main(parfile):
@@ -253,12 +259,12 @@ def main(parfile):
     output_dir = params["output_dir"]
     output_interval = params["output_interval"]
     os.makedirs(output_dir, exist_ok=True)
-
+    #TODO Start here
     dt = params["cfl"] * dx
 
     time = 0.0
     func_names = ["phi","chi"]
-    iox.write_hdf5(0,eqs.u,x,y,func_names,output_dir)
+    iox.write_hdf5(0,g.f.from_fixed_array(eqs.u),g.f.from_fixed_array(x),g.f.from_fixed_array(y),func_names,output_dir)
 
     Nt = params["Nt"]
 
