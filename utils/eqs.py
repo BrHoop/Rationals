@@ -25,17 +25,13 @@ class Equations(ABC):
             the time integrator.
         """
 
-        self.Nu = NU
+        self.NU = NU
         self.shp = g.shp
-        self.u = []
+        self.u = np.zeros((NU, *g.shp), dtype=np.float64)
         self.apply_bc = apply_bc
 
-        for i in range(NU):
-            d = np.zeros(tuple(self.shp))
-            self.u.append(d)
-
     @abstractmethod
-    def rhs(self, dtu, u, g):
+    def rhs(self, dtu, u, x, y, g):
         """
         The RHS update.
         """
