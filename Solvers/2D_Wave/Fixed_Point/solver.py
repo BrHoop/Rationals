@@ -14,7 +14,6 @@ sys.path.insert(
 )
 
 import numpy as np
-
 import utils.ioxdmf as iox
 from utils.eqs import Equations
 from utils.fixed_point import fixed_point
@@ -83,15 +82,11 @@ def grad_x(u: np.ndarray, g: Grid2D) -> np.ndarray:
     idx_by_2 = g.f.fixed_div(g.f.to_fixed_scalar(1.0), 2 * g.dx[0])
     idx_by_12 = g.f.fixed_div(g.f.to_fixed_scalar(1.0), 12 * g.dx[0])
 
-    dudx[2:-2, :] = g.f.fixed_mul(
-        (-u[4:, :] + 8 * u[3:-1, :] - 8 * u[1:-3, :] + u[:-4, :]), idx_by_12
-    )
-
+    dudx[2:-2, :] = g.f.fixed_mul((-u[4:, :] + 8 * u[3:-1, :] - 8 * u[1:-3, :] + u[:-4, :]), idx_by_12)
     dudx[0, :] = g.f.fixed_mul((-3 * u[0, :] + 4 * u[1, :] - u[2, :]), idx_by_2)
     dudx[1, :] = g.f.fixed_mul((-u[0, :] + u[2, :]), idx_by_2)
     dudx[-2, :] = g.f.fixed_mul((-u[-3, :] + u[-1, :]), idx_by_2)
     dudx[-1, :] = g.f.fixed_mul((u[-3, :] - 4 * u[-2, :] + 3 * u[-1, :]), idx_by_2)
-
     return dudx
 
 
