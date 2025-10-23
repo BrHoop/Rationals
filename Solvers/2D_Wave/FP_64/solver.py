@@ -1,7 +1,7 @@
 import os
 import sys
 import tomllib
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '/Users/isaacsudweeks/Library/CloudStorage/OneDrive-BrighamYoungUniversity/Personal Projects/Rationals')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '/Users/bryso/Documents/Github/Rationals')))
 import utils.ioxdmf as iox
 from numba import njit
 
@@ -10,9 +10,6 @@ from utils.grid import Grid
 from utils.sowave import ScalarField
 import numpy as np
 from utils.types import BCType
-
-
-
 
 
 class Grid2D(Grid):
@@ -143,7 +140,7 @@ class ScalarField(Equations):
         self.U_PHI = 0
         self.U_CHI = 1
 
-    def rhs(self, dtu, u, g: Grid2D):
+    def rhs(self, dtu, u, x, y, g: Grid2D):
         dtphi = dtu[0]
         dtchi = dtu[1]
         phi = u[0]
@@ -152,7 +149,8 @@ class ScalarField(Equations):
         dtphi[:] = chi[:]
         dxxphi = grad_xx(phi,g)
         dyyphi = grad_yy(phi,g)
-        dtchi[:] = dxxphi[:] + dyyphi[:]
+        r = np.sqrt(x**2 + y**2)
+        dtchi[:] = dxxphi[:] + dyyphi[:] - np.sin(2*phi)/(r**2+1e-2)
 
         if self.apply_bc == BCType.RHS and self.bound_cond == "SOMMERFELD":
                 # Sommerfeld boundary conditions
@@ -215,22 +213,14 @@ def bc_sommerfeld(dtf, f, dxf, dyf, falloff, ngz, x, y, Nx, Ny):
             dtf[i, j] = (-(x[i] * dxf[i, j] + y[j] * dyf[i, j] + falloff * f[i, j]) * inv_r)
 
 
-def rk2(eqs, g, dt):
-    nu = len(eqs.u)
-
-    up = []
-    k1 = []
-    for i in range(nu):
-        ux = np.empty_like(eqs.u[0], dtype=object)
-        kx = np.empty_like(eqs.u[0], dtype=object)
-        up.append(ux)
-        k1.append(kx)
-    eqs.rhs(k1, eqs.u ,g)
-    for i in range(nu):
-        up[i][:] = eqs.u[i][:] + 0.5 * dt * k1[i][:]
-    eqs.rhs(k1, up, g)
-    for i in range(nu):
-        eqs.u[i][:] = eqs.u[i][:] + dt * k1[i][:]
+def rk2(eqs, g, dt, x, y):
+    nu = eqs.u.shape[0]
+    up = np.empty_like(eqs.u)
+    k1 = np.empty_like(eqs.u)
+    eqs.rhs(k1, eqs.u ,x, y, g)
+    up[:] = eqs.u + 0.5 * dt * k1
+    eqs.rhs(k1, up, x, y, g)
+    eqs.u[:] = eqs.u + dt * k1
 
 
 def main(parfile):
@@ -261,7 +251,7 @@ def main(parfile):
 
 
     for i in range(1, Nt +1):
-        rk2(eqs, g, dt)
+        rk2(eqs, g, dt, x, y)
         time += dt
         print(f"Step {i:d} t={time:.2e}")
         if i % output_interval == 0:
@@ -275,4 +265,3 @@ if __name__ == "__main__":
         sys.exit(1)
     parfile = sys.argv[1]
     main(parfile)
-

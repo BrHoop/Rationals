@@ -7,8 +7,8 @@ sys.path.insert(
     0,
     os.path.abspath(
         os.path.join(
-            os.path.dirname(__file__),
-            "/Users/isaacsudweeks/Library/CloudStorage/OneDrive-BrighamYoungUniversity/Personal Projects/Rationals",
+            os.path.dirname(__file__),'/Users/bryso/Documents/Github/Rationals'
+            #"/Users/isaacsudweeks/Library/CloudStorage/OneDrive-BrighamYoungUniversity/Personal Projects/Rationals",
         )
     ),
 )
@@ -171,11 +171,11 @@ class ScalarField(Equations):
 
         self.bound_cond = bctype
         super().__init__(NU, g, apply_bc)
-        self.u = [np.zeros(tuple(self.shp), dtype=np.int64) for _ in range(NU)]
+        self.u = np.zeros((NU, *self.shp), dtype=np.int64)
         self.U_PHI = 0
         self.U_CHI = 1
 
-    def rhs(self, dtu, u, g: Grid2D):
+    def rhs(self, dtu, u, x, y, g: Grid2D):
         dtphi = dtu[0]
         dtchi = dtu[1]
         phi = u[0]
@@ -184,7 +184,8 @@ class ScalarField(Equations):
         dtphi[:] = chi[:]
         dxxphi = grad_xx(phi, g)
         dyyphi = grad_yy(phi, g)
-        dtchi[:] = dxxphi[:] + dyyphi[:]
+        r = np.sqrt(x**2+y**2)
+        dtchi[:] = dxxphi[:] + dyyphi[:] - g.f.to_fixed_array(np.sin(2*g.f.from_fixed_array(phi))/(r**2+1e-2))
 
         if self.apply_bc == BCType.RHS and self.bound_cond == "SOMMERFELD":
             x = g.xi[0]
@@ -301,23 +302,20 @@ def bc_sommerfeld(
                 dtf[i, j] = -fp.fixed_mul(damping, inv_r)
 
 
-def rk2(eqs: ScalarField, g: Grid2D, dt: int):
-    nu = len(eqs.u)
+def rk2(eqs: ScalarField, x, y, g: Grid2D, dt: int):
     half_dt = g.f.fixed_mul(dt, g.f.to_fixed_scalar(0.5))
+    nu = eqs.u.shape[0]
+    up = np.empty_like(eqs.u, dtype=np.int64)
+    k1 = np.empty_like(eqs.u, dtype=np.int64)
 
-    up = [np.empty_like(eqs.u[0], dtype=np.int64) for _ in range(nu)]
-    k1 = [np.empty_like(eqs.u[0], dtype=np.int64) for _ in range(nu)]
-
-    eqs.rhs(k1, eqs.u, g)
-    for i in range(nu):
-        up[i][:] = eqs.u[i][:] + g.f.fixed_mul(k1[i], half_dt)
+    eqs.rhs(k1, eqs.u, x, y, g)
+    up[:] = eqs.u + g.f.fixed_mul(k1, half_dt)
 
     if eqs.apply_bc == BCType.FUNCTION:
         eqs.apply_bcs(up, g)
 
-    eqs.rhs(k1, up, g)
-    for i in range(nu):
-        eqs.u[i][:] = eqs.u[i][:] + g.f.fixed_mul(k1[i], dt)
+    eqs.rhs(k1, up, x, y, g)
+    eqs.u[:] += g.f.fixed_mul(k1, dt)
 
     if eqs.apply_bc == BCType.FUNCTION:
         eqs.apply_bcs(eqs.u, g)
@@ -349,7 +347,7 @@ def main(parfile: str):
     Nt = params["Nt"]
 
     for step in range(1, Nt + 1):
-        rk2(eqs, g, dt)
+        rk2(eqs, x_float, y_float, g, dt)
         time_fixed += dt
 
         print(f"Step {step:d} t={g.f.from_fixed_scalar(time_fixed):.2e}")
