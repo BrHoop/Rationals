@@ -1,7 +1,7 @@
 import os
 import sys
 import tomllib
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '/Users/bryso/Documents/Github/Rationals')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
 import utils.ioxdmf as iox
 from numba import njit
 
