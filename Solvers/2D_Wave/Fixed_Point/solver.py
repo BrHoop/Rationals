@@ -7,7 +7,7 @@ sys.path.insert(
     0,
     os.path.abspath(
         os.path.join(
-            os.path.dirname(__file__),'/Users/bryso/Documents/Github/Rationals'
+            os.path.dirname(__file__),'../../..'
             #"/Users/isaacsudweeks/Library/CloudStorage/OneDrive-BrighamYoungUniversity/Personal Projects/Rationals",
         )
     ),

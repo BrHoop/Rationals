@@ -21,6 +21,7 @@ class Grid(ABC):
         self.nghost = nghost
 
 
+
     def get_shape(self):
         """
         Get the shape of the grid.

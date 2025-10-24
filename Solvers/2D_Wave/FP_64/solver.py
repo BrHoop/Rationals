@@ -1,6 +1,8 @@
 import os
 import sys
 import tomllib
+from abc import ABC, abstractmethod
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
 import utils.ioxdmf as iox
 from numba import njit
@@ -9,8 +11,173 @@ from utils.eqs import Equations
 from utils.grid import Grid
 from utils.sowave import ScalarField
 import numpy as np
-from utils.types import BCType
+from utils.types import BCType, FilterApply, FilterType
 
+
+class KreissOligerFilterO6_2D():
+    """
+    Kreiss-Oliger filter in 2D
+    """
+
+    def __init__(self, dx, dy, sigma, filter_boundary=True):
+        self.sigma = sigma
+        self.filter_boundary = filter_boundary
+        self.dx = dx
+        self.dy = dy
+
+        filter_apply = FilterApply.RHS
+        filter_type = FilterType.KREISS_OLIGER_O6
+        self.frequency = 1
+
+    def get_sigma(self):
+        return self.sigma
+
+    def filter_x(self, u):
+        dux = np.zeros_like(u)
+
+        # Kreiss-Oliger filter in x direction
+        dx = self.dx
+        sigma = self.sigma
+        fbound = self.filter_boundary
+        self._apply_ko6_filter_x(dux, u, dx, sigma, fbound)
+        return dux
+
+    def filter_y(self, u):
+        duy = np.zeros_like(u)
+
+        # Kreiss-Oliger filter in the y direction
+        dy = self.dy
+        sigma = self.sigma
+        fbound = self.filter_boundary
+        self._apply_ko6_filter_y(duy, u ,dy, sigma, fbound)
+        return duy
+
+    def apply(self, u):
+        """
+        Apply the KO filter in both x and y directions and return the sum.
+        """
+        return self.filter_x(u) + self.filter_y(u)
+
+    @staticmethod
+    @njit
+    def _apply_ko6_filter_x(du : np.ndarray, u : np.ndarray, dx : float, sigma : float, filter_boundary : bool):
+        factor = sigma / (64.0 * dx)
+
+        # centered stencil
+        du[3:-3,:] = factor * (
+            u[:-6,:]
+            - 6.0 * u[1:-5,:]
+            + 15.0 * u[2:-4,:]
+            - 20.0 * u[3:-3,:]
+            + 15.0 * u[4:-2,:]
+            - 6.0 * u[5:-1,:]
+            + u[6:,:]
+        )
+
+        if filter_boundary:
+            smr3 = 9.0 / 48.0 * 64 * dx
+            smr2 = 43.0 / 48.0 * 64 * dx
+            smr1 = 49.0 / 48.0 * 64 * dx
+            spr3 = smr3
+            spr2 = smr2
+            spr1 = smr1
+            du[0,:] = sigma * (-u[0,:] + 3.0 * u[1,:] - 3.0 * u[2,:] + u[3,:]) / smr3
+            du[1,:] = (
+                sigma
+                * (3.0 * u[0,:] - 10.0 * u[1,:] + 12.0 * u[2,:] - 6.0 * u[3,:] + u[4,:])
+                / smr2
+            )
+            du[2,:] = (
+                sigma
+                * (
+                    -3.0 * u[0,:]
+                    + 12.0 * u[1,:]
+                    - 19.0 * u[2,:]
+                    + 15.0 * u[3,:]
+                    - 6.0 * u[4,:]
+                    + u[5,:]
+                )
+                / smr1
+            )
+            du[-3,:] = (
+                sigma
+                * (
+                    u[-6,:]
+                    - 6.0 * u[-5,:]
+                    + 15.0 * u[-4,:]
+                    - 19.0 * u[-3,:]
+                    + 12.0 * u[-2,:]
+                    - 3.0 * u[-1,:]
+                )
+                / spr1
+            )
+            du[-2,:] = (
+                sigma
+                * (u[-5,:] - 6.0 * u[-4,:] + 12.0 * u[-3,:] - 10.0 * u[-2,:] + 3.0 * u[-1,:])
+                / spr2
+            )
+            du[-1,:] = sigma * (u[-4,:] - 3.0 * u[-3,:] + 3.0 * u[-2,:] - u[-1,:]) / spr3
+
+
+    @staticmethod
+    @njit
+    def _apply_ko6_filter_y(du: np.ndarray, u: np.ndarray, dy: float, sigma: float, filter_boundary: bool):
+        factor = sigma / (64.0 * dy)
+
+        # centered stencil
+        du[:,3:-3] = factor * (
+            u[:,:-6]
+            - 6.0 * u[:,1:-5]
+            + 15.0 * u[:,2:-4]
+            - 20.0 * u[:,3:-3]
+            + 15.0 * u[:,4:-2]
+            - 6.0 * u[:,5:-1]
+            + u[:,6:]
+        )
+
+        if filter_boundary:
+            smr3 = 9.0 / 48.0 * 64 * dy
+            smr2 = 43.0 / 48.0 * 64 * dy
+            smr1 = 49.0 / 48.0 * 64 * dy
+            spr3 = smr3
+            spr2 = smr2
+            spr1 = smr1
+            du[:,0] = sigma * (-u[:,0] + 3.0 * u[:,1] - 3.0 * u[:,2] + u[:,3]) / smr3
+            du[:,1] = (
+                sigma
+                * (3.0 * u[:,0] - 10.0 * u[:,1] + 12.0 * u[:,2] - 6.0 * u[:,3] + u[:,4])
+                / smr2
+            )
+            du[:,2] = (
+                sigma
+                * (
+                    -3.0 * u[:,0]
+                    + 12.0 * u[:,1]
+                    - 19.0 * u[:,2]
+                    + 15.0 * u[:,3]
+                    - 6.0 * u[:,4]
+                    + u[:,5]
+                )
+                / smr1
+            )
+            du[:,-3] = (
+                sigma
+                * (
+                    u[:,-6]
+                    - 6.0 * u[:,-5]
+                    + 15.0 * u[:,-4]
+                    - 19.0 * u[:,-3]
+                    + 12.0 * u[:,-2]
+                    - 3.0 * u[:,-1]
+                )
+                / spr1
+            )
+            du[:,-2] = (
+                sigma
+                * (u[:,-5] - 6.0 * u[:,-4] + 12.0 * u[:,-3] - 10.0 * u[:,-2] + 3.0 * u[:,-1])
+                / spr2
+            )
+            du[:,-1] = sigma * (u[:,-4] - 3.0 * u[:,-3] + 3.0 * u[:,-2] - u[:,-1]) / spr3
 
 class Grid2D(Grid):
     """
@@ -78,9 +245,7 @@ def grad_y(u,g:Grid2D):
     idy_by_12 = 1.0 / (12 * g.dx[1])
 
     # center stencil
-    dudy[:, 2:-2] = (
-                            -u[:, 4:] + 8 * u[:, 3:-1] - 8 * u[:, 1:-3] + u[:, 0:-4]
-                    ) * idy_by_12
+    dudy[:, 2:-2] = (-u[:, 4:] + 8 * u[:, 3:-1] - 8 * u[:, 1:-3] + u[:, 0:-4]) * idy_by_12
 
     # 4th order boundary stencils
     dudy[:, 0] = (-3 * u[:, 0] + 4 * u[:, 1] - u[:, 2]) * idy_by_2
@@ -213,13 +378,21 @@ def bc_sommerfeld(dtf, f, dxf, dyf, falloff, ngz, x, y, Nx, Ny):
             dtf[i, j] = (-(x[i] * dxf[i, j] + y[j] * dyf[i, j] + falloff * f[i, j]) * inv_r)
 
 
-def rk2(eqs, g, dt, x, y):
+def rk2(eqs, g, dt, x, y, fltr):
     nu = eqs.u.shape[0]
     up = np.empty_like(eqs.u)
     k1 = np.empty_like(eqs.u)
     eqs.rhs(k1, eqs.u ,x, y, g)
+    # Apply KO filter as dissipative RHS term (stage 1)
+    for i in range(nu):
+        k1[i] += fltr.apply(eqs.u[i])
+
     up[:] = eqs.u + 0.5 * dt * k1
     eqs.rhs(k1, up, x, y, g)
+    # Apply KO filter as dissipative RHS term (stage 2)
+    for i in range(nu):
+        k1[i] += fltr.apply(up[i])
+
     eqs.u[:] = eqs.u + dt * k1
 
 
@@ -243,15 +416,17 @@ def main(parfile):
 
     dt = params["cfl"] * dx
 
+    # Setup KO filter
+    fltr = KreissOligerFilterO6_2D(dx, dy, sigma=params.get("ko_sigma", 0.1), filter_boundary=True)
+
     time = 0.0
     func_names = ["phi","chi"]
     iox.write_hdf5(0,eqs.u,x,y,func_names,output_dir)
 
     Nt = params["Nt"]
 
-
     for i in range(1, Nt +1):
-        rk2(eqs, g, dt, x, y)
+        rk2(eqs, g, dt, x, y, fltr)
         time += dt
         print(f"Step {i:d} t={time:.2e}")
         if i % output_interval == 0:
