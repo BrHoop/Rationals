@@ -3,6 +3,8 @@ import os
 import sys
 import tomllib
 
+from numba import njit
+
 sys.path.insert(
     0,
     os.path.abspath(
@@ -18,7 +20,112 @@ import utils.ioxdmf as iox
 from utils.eqs import Equations
 from utils.fixed_point import fixed_point
 from utils.grid import Grid
-from utils.types import BCType
+from utils.types import BCType, FilterApply, FilterType
+
+
+
+class KreissOligerFilterO6_2D():
+    """
+    Kreiss-Oliger filter in 2D
+    """
+
+    def __init__(self, dx, dy, sigma, f, filter_boundary=True,):
+        self.f = f
+        self.sigma = self.f.to_fixed_scalar(sigma) #Lets store sigma in its fixed point form.
+        self.filter_boundary = filter_boundary
+        self.dx = self.f.to_fixed_scalar(dx)
+        self.dy = self.f.to_fixed_scalar(dy)
+        self.frequency = 1
+
+    def get_sigma(self):
+        return self.sigma
+
+    def filter_x(self, u):
+        dux = np.zeros_like(u)
+
+        # Kreiss-Oliger filter in x direction
+        dx = self.dx
+        sigma = self.sigma
+        fbound = self.filter_boundary
+        self._apply_ko6_filter_x(dux, u, dx, sigma, fbound, self.f)
+        return dux
+
+    def filter_y(self, u):
+        duy = np.zeros_like(u)
+
+        # Kreiss-Oliger filter in the y direction
+        dy = self.dy
+        sigma = self.sigma
+        fbound = self.filter_boundary
+        self._apply_ko6_filter_y(duy, u ,dy, sigma, fbound, self.f)
+        return duy
+
+    def apply(self, u):
+        """
+        Apply the KO filter in both x and y directions and return the sum.
+        """
+        return self.filter_x(u) + self.filter_y(u)
+
+    @staticmethod
+    @njit
+    def _apply_ko6_filter_x(du : np.ndarray, u : np.ndarray, dx : float, sigma : float, filter_boundary : bool, f):
+        factor = f.fixed_div(sigma, 64 * dx)
+
+        # centered stencil
+        du[3:-3,:] = f.fixed_mul(factor,(u[:-6,:] - 6 * u[1:-5,:] + 15 * u[2:-4,:] - 20 * u[3:-3,:] + 15 * u[4:-2,:] - 6 * u[5:-1,:] + u[6:,:]))
+
+        if filter_boundary:
+            smr3 = f.fixed_div(f.to_fixed_scalar(9), 48*64*dx)
+            smr2 = f.fixed_div(f.to_fixed_scalar(43), 48*64*dx)
+            smr1 = f.fixed_div(f.to_fixed_scalar(49), 48*64*dx)
+
+            spr3 = smr3
+            spr2 = smr2
+            spr1 = smr1
+
+
+            du[0,:] = f.fixed_div(f.fixed_mul(sigma, (-u[0,:] + 3 * u[1,:] - 3 * u[2,:] + u[3,:])),smr3)
+
+            du[1,:] = f.fixed_div(f.fixed_mul(sigma, (3 * u[0,:] - 10 * u[1,:] + 12 * u[2,:] - 6 * u[3,:] + u[4,:])),smr2)
+
+            du[2,:] = f.fixed_div(f.fixed_mul(sigma, (-3 * u[0,:] + 12 * u[1,:] - 19 * u[2,:] + 15 * u[3,:] - 6.0 * u[4,:] + u[5,:])),smr1)
+
+            du[-3,:] = f.fixed_div(f.fixed_mul(sigma, (u[-6,:] - 6 * u[-5,:] + 15 * u[-4,:] - 19 * u[-3,:] + 12 * u[-2,:] - 3 * u[-1,:])),spr1)
+
+            du[-2,:] = f.fixed_div(f.fixed_mul(sigma, (u[-5,:] - 6 * u[-4,:] + 12 * u[-3,:] - 10 * u[-2,:] + 3 * u[-1,:])),spr2)
+
+            du[-1,:] = f.fixed_div(f.fixed_mul(sigma, (u[-4,:] - 3 * u[-3,:] + 3 * u[-2,:] - u[-1,:])),spr3)
+
+    @staticmethod
+    @njit
+    def _apply_ko6_filter_y(du: np.ndarray, u: np.ndarray, dy: float, sigma: float, filter_boundary: bool, f):
+        factor = f.fixed_div(sigma, 64 * dy)
+
+        # centered stencil
+        du[:,3:-3] = f.fixed_mul(factor,(u[:,:-6] - 6 * u[:,1:-5] + 15 * u[:,2:-4] - 20 * u[:,3:-3] + 15 * u[:,4:-2] - 6 * u[:,5:-1] + u[:,6:]))
+
+
+        if filter_boundary:
+            smr3 = f.fixed_div(f.to_fixed_scalar(9), 48*64*dy)
+            smr2 = f.fixed_div(f.to_fixed_scalar(43), 48*64*dy)
+            smr1 = f.fixed_div(f.to_fixed_scalar(49), 48*64*dy)
+
+            spr3 = smr3
+            spr2 = smr2
+            spr1 = smr1
+
+            du[:,0] = f.fixed_div(f.fixed_mul(sigma, (-u[:,0] + 3 * u[:,1] - 3 * u[:,2] + u[:,3])),smr3)
+
+            du[:,1] = f.fixed_div(f.fixed_mul(sigma, (3 * u[:,0] - 10 * u[:,1] + 12 * u[:,2] - 6 * u[:,3] + u[:,4])),smr2)
+
+            du[:,2] = f.fixed_div(f.fixed_mul(sigma, (-3 * u[:,0] + 12 * u[:,1] - 19 * u[:,2] + 15 * u[:,3] - 6.0 * u[:,4] + u[:,5])),smr1)
+
+            du[:,-3] = f.fixed_div(f.fixed_mul(sigma, (u[:,-6] - 6 * u[:,-5] + 15 * u[:,-4] - 19 * u[:,-3] + 12 * u[:,-2] - 3 * u[:,1])),spr1)
+
+            du[:,-2] = f.fixed_div(f.fixed_mul(sigma, (u[:,-5] - 6 * u[:,-4] + 12 * u[:,-3] - 10 * u[:,-2] + 3 * u[:,-1])),spr2)
+
+            du[:,-1] = f.fixed_div(f.fixed_mul(sigma, (u[:,-4] - 3 * u[:,-3] + 3 * u[:,-2] - u[:,-1])),spr3)
+
 
 
 class Grid2D(Grid):
@@ -297,19 +404,26 @@ def bc_sommerfeld(
                 dtf[i, j] = -fp.fixed_mul(damping, inv_r)
 
 
-def rk2(eqs: ScalarField, x, y, g: Grid2D, dt: int):
+def rk2(eqs: ScalarField, x, y, g: Grid2D, dt: int,flt:KreissOligerFilterO6_2D):
     half_dt = g.f.fixed_mul(dt, g.f.to_fixed_scalar(0.5))
     nu = eqs.u.shape[0]
     up = np.empty_like(eqs.u, dtype=np.int64)
     k1 = np.empty_like(eqs.u, dtype=np.int64)
-
     eqs.rhs(k1, eqs.u, x, y, g)
+
+    #Apply KO filter for first stage
+    for i in range(nu):
+        k1[i] += flt.apply(eqs.u[i])
     up[:] = eqs.u + g.f.fixed_mul(k1, half_dt)
 
     if eqs.apply_bc == BCType.FUNCTION:
         eqs.apply_bcs(up, g)
 
     eqs.rhs(k1, up, x, y, g)
+    #Apply KO filter for second stage
+    for i in range(nu):
+        k1[i] += flt.apply(up[i])
+
     eqs.u[:] += g.f.fixed_mul(k1, dt)
 
     if eqs.apply_bc == BCType.FUNCTION:
@@ -332,6 +446,9 @@ def main(parfile: str):
     os.makedirs(output_dir, exist_ok=True)
     dt = g.f.fixed_mul(g.f.to_fixed_scalar(params["cfl"]), g.dx[0])
 
+    #Setup KO filter
+    flt = KreissOligerFilterO6_2D(g.dx[0], g.dx[1], sigma=params.get("ko_sigma", 0.1), f=g.f,filter_boundary=True)
+
     time_fixed = 0
     func_names = ["phi", "chi"]
     u_float = [g.f.from_fixed_array(arr) for arr in eqs.u]
@@ -342,7 +459,7 @@ def main(parfile: str):
     Nt = params["Nt"]
 
     for step in range(1, Nt + 1):
-        rk2(eqs, x_float, y_float, g, dt)
+        rk2(eqs, x_float, y_float, g, dt, flt)
         time_fixed += dt
 
         print(f"Step {step:d} t={g.f.from_fixed_scalar(time_fixed):.2e}")
@@ -363,6 +480,6 @@ def main(parfile: str):
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("Usage:  python solver.py <parfile>")
+        print("Usage:  python JaxSolver.py <parfile>")
         sys.exit(1)
     main(sys.argv[1])

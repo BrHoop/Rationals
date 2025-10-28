@@ -1,6 +1,7 @@
 import os
 import sys
 import tomllib
+from abc import ABC, abstractmethod
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
 import utils.ioxdmf as iox
@@ -23,9 +24,6 @@ class KreissOligerFilterO6_2D():
         self.filter_boundary = filter_boundary
         self.dx = dx
         self.dy = dy
-
-        filter_apply = FilterApply.RHS
-        filter_type = FilterType.KREISS_OLIGER_O6
         self.frequency = 1
 
     def get_sigma(self):
@@ -141,6 +139,7 @@ class KreissOligerFilterO6_2D():
             spr3 = smr3
             spr2 = smr2
             spr1 = smr1
+
             du[:,0] = sigma * (-u[:,0] + 3.0 * u[:,1] - 3.0 * u[:,2] + u[:,3]) / smr3
             du[:,1] = (
                 sigma
@@ -381,6 +380,8 @@ def rk2(eqs, g, dt, x, y, fltr):
     nu = eqs.u.shape[0]
     up = np.empty_like(eqs.u)
     k1 = np.empty_like(eqs.u)
+
+
     eqs.rhs(k1, eqs.u ,x, y, g)
     # Apply KO filter as dissipative RHS term (stage 1)
     for i in range(nu):
@@ -388,6 +389,7 @@ def rk2(eqs, g, dt, x, y, fltr):
 
     up[:] = eqs.u + 0.5 * dt * k1
     eqs.rhs(k1, up, x, y, g)
+
     # Apply KO filter as dissipative RHS term (stage 2)
     for i in range(nu):
         k1[i] += fltr.apply(up[i])
