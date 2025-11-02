@@ -313,8 +313,8 @@ class ScalarField(Equations):
         dtphi[:] = chi[:]
         dxxphi = grad_xx(phi,g)
         dyyphi = grad_yy(phi,g)
-        r = np.sqrt(x**2 + y**2)
-        dtchi[:] = dxxphi[:] + dyyphi[:] - np.sin(2*phi)/(r**2+1e-2)
+        X, Y = np.meshgrid(x, y, indexing="ij")
+        dtchi[:] = dxxphi[:] + dyyphi[:] - np.sin(2*phi)/(X**2+Y**2+1e-5)
 
         if self.apply_bc == BCType.RHS and self.bound_cond == "SOMMERFELD":
                 # Sommerfeld boundary conditions

@@ -1,10 +1,10 @@
 Nt = 6400
-Nx = 201
-Ny = 201
-Xmin = -5.0
-Xmax = 5.0
-Ymin = -5.0
-Ymax = 5.0
+Nx = 401
+Ny = 401
+Xmin = -50.0
+Xmax = 50.0
+Ymin = -50.0
+Ymax = 50.0
 
 cfl = 0.1
 

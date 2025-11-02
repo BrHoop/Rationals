@@ -1,193 +1,317 @@
 import os
 import sys
 import tomllib
-from abc import ABC, abstractmethod
+
+import numpy as np
+import jax
+import jax.numpy as jnp
+
+jax.config.update("jax_enable_x64", True)
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
-import utils.ioxdmf as iox
-from numba import njit
 
+import utils.ioxdmf as iox
 from utils.eqs import Equations
 from utils.grid import Grid
-from utils.sowave import ScalarField
-import numpy as np
-from utils.types import BCType, FilterApply, FilterType
+from utils.types import BCType
 
 
-class KreissOligerFilterO6_2D():
-    """
-    Kreiss-Oliger filter in 2D
-    """
+def grad_x(u: jnp.ndarray, dx: float) -> jnp.ndarray:
+    idx_by_2 = 0.5 / dx
+    idx_by_12 = 1.0 / (12.0 * dx)
+    dudx = jnp.zeros_like(u)
+    dudx = dudx.at[2:-2, :].set(
+        (-u[4:, :] + 8.0 * u[3:-1, :] - 8.0 * u[1:-3, :] + u[:-4, :]) * idx_by_12
+    )
+    dudx = dudx.at[0, :].set((-3.0 * u[0, :] + 4.0 * u[1, :] - u[2, :]) * idx_by_2)
+    dudx = dudx.at[1, :].set((-u[0, :] + u[2, :]) * idx_by_2)
+    dudx = dudx.at[-2, :].set((-u[-3, :] + u[-1, :]) * idx_by_2)
+    dudx = dudx.at[-1, :].set((u[-3, :] - 4.0 * u[-2, :] + 3.0 * u[-1, :]) * idx_by_2)
+    return dudx
 
-    def __init__(self, dx, dy, sigma, filter_boundary=True):
-        self.sigma = sigma
-        self.filter_boundary = filter_boundary
-        self.dx = dx
-        self.dy = dy
-        self.frequency = 1
 
-    def get_sigma(self):
-        return self.sigma
+def grad_y(u: jnp.ndarray, dy: float) -> jnp.ndarray:
+    idy_by_2 = 0.5 / dy
+    idy_by_12 = 1.0 / (12.0 * dy)
+    dudy = jnp.zeros_like(u)
+    dudy = dudy.at[:, 2:-2].set(
+        (-u[:, 4:] + 8.0 * u[:, 3:-1] - 8.0 * u[:, 1:-3] + u[:, :-4]) * idy_by_12
+    )
+    dudy = dudy.at[:, 0].set((-3.0 * u[:, 0] + 4.0 * u[:, 1] - u[:, 2]) * idy_by_2)
+    dudy = dudy.at[:, 1].set((-u[:, 0] + u[:, 2]) * idy_by_2)
+    dudy = dudy.at[:, -2].set((-u[:, -3] + u[:, -1]) * idy_by_2)
+    dudy = dudy.at[:, -1].set((u[:, -3] - 4.0 * u[:, -2] + 3.0 * u[:, -1]) * idy_by_2)
+    return dudy
 
-    def filter_x(self, u):
-        dux = np.zeros_like(u)
 
-        # Kreiss-Oliger filter in x direction
-        dx = self.dx
-        sigma = self.sigma
-        fbound = self.filter_boundary
-        self._apply_ko6_filter_x(dux, u, dx, sigma, fbound)
-        return dux
+def grad_xx(u: jnp.ndarray, dx: float) -> jnp.ndarray:
+    idx_sq = 1.0 / (dx * dx)
+    idx_sq_by_12 = idx_sq / 12.0
+    dxxu = jnp.zeros_like(u)
+    dxxu = dxxu.at[2:-2, :].set(
+        (-u[4:, :] + 16.0 * u[3:-1, :] - 30.0 * u[2:-2, :] + 16.0 * u[1:-3, :] - u[:-4, :])
+        * idx_sq_by_12
+    )
+    dxxu = dxxu.at[0, :].set((2.0 * u[0, :] - 5.0 * u[1, :] + 4.0 * u[2, :] - u[3, :]) * idx_sq)
+    dxxu = dxxu.at[1, :].set((u[0, :] - 2.0 * u[1, :] + u[2, :]) * idx_sq)
+    dxxu = dxxu.at[-2, :].set((u[-3, :] - 2.0 * u[-2, :] + u[-1, :]) * idx_sq)
+    dxxu = dxxu.at[-1, :].set((-u[-4, :] + 4.0 * u[-3, :] - 5.0 * u[-2, :] + 2.0 * u[-1, :]) * idx_sq)
+    return dxxu
 
-    def filter_y(self, u):
-        duy = np.zeros_like(u)
 
-        # Kreiss-Oliger filter in the y direction
-        dy = self.dy
-        sigma = self.sigma
-        fbound = self.filter_boundary
-        self._apply_ko6_filter_y(duy, u ,dy, sigma, fbound)
-        return duy
+def grad_yy(u: jnp.ndarray, dy: float) -> jnp.ndarray:
+    idy_sq = 1.0 / (dy * dy)
+    idy_sq_by_12 = idy_sq / 12.0
+    dyyu = jnp.zeros_like(u)
+    dyyu = dyyu.at[:, 2:-2].set(
+        (-u[:, 4:] + 16.0 * u[:, 3:-1] - 30.0 * u[:, 2:-2] + 16.0 * u[:, 1:-3] - u[:, :-4])
+        * idy_sq_by_12
+    )
+    dyyu = dyyu.at[:, 0].set((2.0 * u[:, 0] - 5.0 * u[:, 1] + 4.0 * u[:, 2] - u[:, 3]) * idy_sq)
+    dyyu = dyyu.at[:, 1].set((u[:, 0] - 2.0 * u[:, 1] + u[:, 2]) * idy_sq)
+    dyyu = dyyu.at[:, -2].set((u[:, -3] - 2.0 * u[:, -2] + u[:, -1]) * idy_sq)
+    dyyu = dyyu.at[:, -1].set((-u[:, -4] + 4.0 * u[:, -3] - 5.0 * u[:, -2] + 2.0 * u[:, -1]) * idy_sq)
+    return dyyu
 
-    def apply(self, u):
-        """
-        Apply the KO filter in both x and y directions and return the sum.
-        """
-        return self.filter_x(u) + self.filter_y(u)
 
-    @staticmethod
-    @njit
-    def _apply_ko6_filter_x(du : np.ndarray, u : np.ndarray, dx : float, sigma : float, filter_boundary : bool):
-        factor = sigma / (64.0 * dx)
-
-        # centered stencil
-        du[3:-3,:] = factor * (
-            u[:-6,:]
-            - 6.0 * u[1:-5,:]
-            + 15.0 * u[2:-4,:]
-            - 20.0 * u[3:-3,:]
-            + 15.0 * u[4:-2,:]
-            - 6.0 * u[5:-1,:]
-            + u[6:,:]
+def ko6_filter_x(u: jnp.ndarray, dx: float, sigma: float, filter_boundary: bool) -> jnp.ndarray:
+    factor = sigma / (64.0 * dx)
+    du = jnp.zeros_like(u)
+    du = du.at[3:-3, :].set(
+        factor
+        * (
+            u[:-6, :]
+            - 6.0 * u[1:-5, :]
+            + 15.0 * u[2:-4, :]
+            - 20.0 * u[3:-3, :]
+            + 15.0 * u[4:-2, :]
+            - 6.0 * u[5:-1, :]
+            + u[6:, :]
         )
+    )
 
-        if filter_boundary:
-            smr3 = 9.0 / 48.0 * 64 * dx
-            smr2 = 43.0 / 48.0 * 64 * dx
-            smr1 = 49.0 / 48.0 * 64 * dx
-            spr3 = smr3
-            spr2 = smr2
-            spr1 = smr1
-            du[0,:] = sigma * (-u[0,:] + 3.0 * u[1,:] - 3.0 * u[2,:] + u[3,:]) / smr3
-            du[1,:] = (
-                sigma
-                * (3.0 * u[0,:] - 10.0 * u[1,:] + 12.0 * u[2,:] - 6.0 * u[3,:] + u[4,:])
-                / smr2
-            )
-            du[2,:] = (
-                sigma
-                * (
-                    -3.0 * u[0,:]
-                    + 12.0 * u[1,:]
-                    - 19.0 * u[2,:]
-                    + 15.0 * u[3,:]
-                    - 6.0 * u[4,:]
-                    + u[5,:]
-                )
-                / smr1
-            )
-            du[-3,:] = (
-                sigma
-                * (
-                    u[-6,:]
-                    - 6.0 * u[-5,:]
-                    + 15.0 * u[-4,:]
-                    - 19.0 * u[-3,:]
-                    + 12.0 * u[-2,:]
-                    - 3.0 * u[-1,:]
-                )
-                / spr1
-            )
-            du[-2,:] = (
-                sigma
-                * (u[-5,:] - 6.0 * u[-4,:] + 12.0 * u[-3,:] - 10.0 * u[-2,:] + 3.0 * u[-1,:])
-                / spr2
-            )
-            du[-1,:] = sigma * (u[-4,:] - 3.0 * u[-3,:] + 3.0 * u[-2,:] - u[-1,:]) / spr3
+    if filter_boundary:
+        smr3 = (9.0 / 48.0) * 64.0 * dx
+        smr2 = (43.0 / 48.0) * 64.0 * dx
+        smr1 = (49.0 / 48.0) * 64.0 * dx
+        spr3 = smr3
+        spr2 = smr2
+        spr1 = smr1
 
-
-    @staticmethod
-    @njit
-    def _apply_ko6_filter_y(du: np.ndarray, u: np.ndarray, dy: float, sigma: float, filter_boundary: bool):
-        factor = sigma / (64.0 * dy)
-
-        # centered stencil
-        du[:,3:-3] = factor * (
-            u[:,:-6]
-            - 6.0 * u[:,1:-5]
-            + 15.0 * u[:,2:-4]
-            - 20.0 * u[:,3:-3]
-            + 15.0 * u[:,4:-2]
-            - 6.0 * u[:,5:-1]
-            + u[:,6:]
+        du = du.at[0, :].set(sigma * (-u[0, :] + 3.0 * u[1, :] - 3.0 * u[2, :] + u[3, :]) / smr3)
+        du = du.at[1, :].set(
+            sigma * (3.0 * u[0, :] - 10.0 * u[1, :] + 12.0 * u[2, :] - 6.0 * u[3, :] + u[4, :]) / smr2
         )
+        du = du.at[2, :].set(
+            sigma
+            * (
+                -3.0 * u[0, :]
+                + 12.0 * u[1, :]
+                - 19.0 * u[2, :]
+                + 15.0 * u[3, :]
+                - 6.0 * u[4, :]
+                + u[5, :]
+            )
+            / smr1
+        )
+        du = du.at[-3, :].set(
+            sigma
+            * (
+                u[-6, :]
+                - 6.0 * u[-5, :]
+                + 15.0 * u[-4, :]
+                - 19.0 * u[-3, :]
+                + 12.0 * u[-2, :]
+                - 3.0 * u[-1, :]
+            )
+            / spr1
+        )
+        du = du.at[-2, :].set(
+            sigma * (u[-5, :] - 6.0 * u[-4, :] + 12.0 * u[-3, :] - 10.0 * u[-2, :] + 3.0 * u[-1, :]) / spr2
+        )
+        du = du.at[-1, :].set(sigma * (u[-4, :] - 3.0 * u[-3, :] + 3.0 * u[-2, :] - u[-1, :]) / spr3)
 
-        if filter_boundary:
-            smr3 = 9.0 / 48.0 * 64 * dy
-            smr2 = 43.0 / 48.0 * 64 * dy
-            smr1 = 49.0 / 48.0 * 64 * dy
-            spr3 = smr3
-            spr2 = smr2
-            spr1 = smr1
+    return du
 
-            du[:,0] = sigma * (-u[:,0] + 3.0 * u[:,1] - 3.0 * u[:,2] + u[:,3]) / smr3
-            du[:,1] = (
-                sigma
-                * (3.0 * u[:,0] - 10.0 * u[:,1] + 12.0 * u[:,2] - 6.0 * u[:,3] + u[:,4])
-                / smr2
+
+def ko6_filter_y(u: jnp.ndarray, dy: float, sigma: float, filter_boundary: bool) -> jnp.ndarray:
+    factor = sigma / (64.0 * dy)
+    du = jnp.zeros_like(u)
+    du = du.at[:, 3:-3].set(
+        factor
+        * (
+            u[:, :-6]
+            - 6.0 * u[:, 1:-5]
+            + 15.0 * u[:, 2:-4]
+            - 20.0 * u[:, 3:-3]
+            + 15.0 * u[:, 4:-2]
+            - 6.0 * u[:, 5:-1]
+            + u[:, 6:]
+        )
+    )
+
+    if filter_boundary:
+        smr3 = (9.0 / 48.0) * 64.0 * dy
+        smr2 = (43.0 / 48.0) * 64.0 * dy
+        smr1 = (49.0 / 48.0) * 64.0 * dy
+        spr3 = smr3
+        spr2 = smr2
+        spr1 = smr1
+
+        du = du.at[:, 0].set(sigma * (-u[:, 0] + 3.0 * u[:, 1] - 3.0 * u[:, 2] + u[:, 3]) / smr3)
+        du = du.at[:, 1].set(
+            sigma * (3.0 * u[:, 0] - 10.0 * u[:, 1] + 12.0 * u[:, 2] - 6.0 * u[:, 3] + u[:, 4]) / smr2
+        )
+        du = du.at[:, 2].set(
+            sigma
+            * (
+                -3.0 * u[:, 0]
+                + 12.0 * u[:, 1]
+                - 19.0 * u[:, 2]
+                + 15.0 * u[:, 3]
+                - 6.0 * u[:, 4]
+                + u[:, 5]
             )
-            du[:,2] = (
-                sigma
-                * (
-                    -3.0 * u[:,0]
-                    + 12.0 * u[:,1]
-                    - 19.0 * u[:,2]
-                    + 15.0 * u[:,3]
-                    - 6.0 * u[:,4]
-                    + u[:,5]
-                )
-                / smr1
+            / smr1
+        )
+        du = du.at[:, -3].set(
+            sigma
+            * (
+                u[:, -6]
+                - 6.0 * u[:, -5]
+                + 15.0 * u[:, -4]
+                - 19.0 * u[:, -3]
+                + 12.0 * u[:, -2]
+                - 3.0 * u[:, -1]
             )
-            du[:,-3] = (
-                sigma
-                * (
-                    u[:,-6]
-                    - 6.0 * u[:,-5]
-                    + 15.0 * u[:,-4]
-                    - 19.0 * u[:,-3]
-                    + 12.0 * u[:,-2]
-                    - 3.0 * u[:,-1]
-                )
-                / spr1
-            )
-            du[:,-2] = (
-                sigma
-                * (u[:,-5] - 6.0 * u[:,-4] + 12.0 * u[:,-3] - 10.0 * u[:,-2] + 3.0 * u[:,-1])
-                / spr2
-            )
-            du[:,-1] = sigma * (u[:,-4] - 3.0 * u[:,-3] + 3.0 * u[:,-2] - u[:,-1]) / spr3
+            / spr1
+        )
+        du = du.at[:, -2].set(
+            sigma * (u[:, -5] - 6.0 * u[:, -4] + 12.0 * u[:, -3] - 10.0 * u[:, -2] + 3.0 * u[:, -1]) / spr2
+        )
+        du = du.at[:, -1].set(sigma * (u[:, -4] - 3.0 * u[:, -3] + 3.0 * u[:, -2] - u[:, -1]) / spr3)
+
+    return du
+
+
+def ko_filter_2d(u: jnp.ndarray, dx: float, dy: float, sigma: float, filter_boundary: bool) -> jnp.ndarray:
+    return ko6_filter_x(u, dx, sigma, filter_boundary) + ko6_filter_y(u, dy, sigma, filter_boundary)
+
+
+def sommerfeld_rhs(
+    dtf: jnp.ndarray,
+    f: jnp.ndarray,
+    dxf: jnp.ndarray,
+    dyf: jnp.ndarray,
+    x: jnp.ndarray,
+    y: jnp.ndarray,
+    inv_r: jnp.ndarray,
+    ng: int,
+    falloff: float = 1.0,
+) -> jnp.ndarray:
+    if ng == 0:
+        return dtf
+
+    update = -(x * dxf + y * dyf + falloff * f) * inv_r
+    dtf = dtf.at[:ng, :].set(update[:ng, :])
+    dtf = dtf.at[-ng:, :].set(update[-ng:, :])
+    dtf = dtf.at[:, :ng].set(update[:, :ng])
+    dtf = dtf.at[:, -ng:].set(update[:, -ng:])
+    return dtf
+
+
+def apply_reflect(u: jnp.ndarray) -> jnp.ndarray:
+    phi = u[0]
+    chi = u[1]
+
+    phi = phi.at[0, :].set(0.0)
+    phi = phi.at[-1, :].set(0.0)
+    phi = phi.at[:, 0].set(0.0)
+    phi = phi.at[:, -1].set(0.0)
+
+    chi = chi.at[0, :].set((4.0 * chi[1, :] - chi[2, :]) / 3.0)
+    chi = chi.at[-1, :].set((4.0 * chi[-2, :] - chi[-3, :]) / 3.0)
+    chi = chi.at[:, 0].set((4.0 * chi[:, 1] - chi[:, 2]) / 3.0)
+    chi = chi.at[:, -1].set((4.0 * chi[:, -2] - chi[:, -3]) / 3.0)
+
+    return jnp.stack((phi, chi), axis=0)
+
+
+def make_rhs_fn(
+    dx: float,
+    dy: float,
+    inv_rsq_eps: jnp.ndarray,
+    x: jnp.ndarray,
+    y: jnp.ndarray,
+    inv_r: jnp.ndarray,
+    ng: int,
+    apply_sommerfeld: bool,
+):
+    def rhs(u: jnp.ndarray) -> jnp.ndarray:
+        phi = u[0]
+        chi = u[1]
+
+        dtphi = chi
+        dxxphi = grad_xx(phi, dx)
+        dyyphi = grad_yy(phi, dy)
+        dtchi = dxxphi + dyyphi - jnp.sin(2.0 * phi) * inv_rsq_eps
+
+        if apply_sommerfeld:
+            dxphi = grad_x(phi, dx)
+            dyphi = grad_y(phi, dy)
+            dtphi = sommerfeld_rhs(dtphi, phi, dxphi, dyphi, x, y, inv_r, ng)
+
+            dxchi = grad_x(chi, dx)
+            dychi = grad_y(chi, dy)
+            dtchi = sommerfeld_rhs(dtchi, chi, dxchi, dychi, x, y, inv_r, ng)
+
+        return jnp.stack((dtphi, dtchi), axis=0)
+
+    return jax.jit(rhs)
+
+
+def make_bc_fn(bound_cond: str):
+    if bound_cond != "REFLECT":
+        return None
+
+    @jax.jit
+    def apply_bc(u: jnp.ndarray) -> jnp.ndarray:
+        return apply_reflect(u)
+
+    return apply_bc
+
+
+def make_filter_fn(dx: float, dy: float, sigma: float, filter_boundary: bool):
+    def apply_filter(u: jnp.ndarray) -> jnp.ndarray:
+        return jax.vmap(lambda field: ko_filter_2d(field, dx, dy, sigma, filter_boundary))(u)
+
+    return apply_filter
+
+
+def make_rk2_step(rhs_fn, filter_fn, dt: float, apply_bc_fn=None):
+    if apply_bc_fn is None:
+
+        @jax.jit
+        def step(u: jnp.ndarray) -> jnp.ndarray:
+            k1 = rhs_fn(u) + filter_fn(u)
+            up = u + 0.5 * dt * k1
+            k2 = rhs_fn(up) + filter_fn(up)
+            return u + dt * k2
+
+        return step
+
+    @jax.jit
+    def step_with_bc(u: jnp.ndarray) -> jnp.ndarray:
+        u_bc = apply_bc_fn(u)
+        k1 = rhs_fn(u_bc) + filter_fn(u_bc)
+        up = apply_bc_fn(u_bc + 0.5 * dt * k1)
+        k2 = rhs_fn(up) + filter_fn(up)
+        return apply_bc_fn(u_bc + dt * k2)
+
+    return step_with_bc
+
 
 class Grid2D(Grid):
-    """
-    Class to define a 2D grid for a PDE system.
-    Parameters:
-    ----------
-    Nx : int
-        Number of grid points in the x-direction.
-    Ny : int
-        Number of grid points in the y-direction.
-    """
-
     def __init__(self, params):
         if "Nx" not in params:
             raise ValueError("Nx is required")
@@ -204,240 +328,113 @@ class Grid2D(Grid):
         dx = (xmax - xmin) / (nx - 1)
         dy = (ymax - ymin) / (ny - 1)
         ng = params.get("NGhost", 0)
-        nx = nx + 2 * ng
-        ny = ny + 2 * ng
+
+        nx_eff = nx + 2 * ng
+        ny_eff = ny + 2 * ng
         xmin -= ng * dx
         xmax += ng * dx
         ymin -= ng * dy
         ymax += ng * dy
 
-        shp = [nx, ny]
-
-        xi = [np.linspace(xmin, xmax, nx), np.linspace(ymin, ymax, ny)]
-
+        shp = [nx_eff, ny_eff]
+        xi = [np.linspace(xmin, xmax, nx_eff), np.linspace(ymin, ymax, ny_eff)]
         dxn = np.array([dx, dy])
-        #print(f"Grid2D: {shp}, {xi}, {dxn}")
+
         super().__init__(shp, xi, dxn, ng)
 
 
-
-def grad_x(u,g:Grid2D):
-    dudx = np.zeros_like(u)
-    idx_by_2 = 1.0 / (2*g.dx[0])
-    idx_by_12 = 1.0 / (12 * g.dx[0])
-
-    #center stencil
-    dudx[2:-2, :] = (-u[4:, :] + 8 * u[3:-1, :] - 8 * u[1:-3, :] + u[:-4, :]) * idx_by_12
-
-    # 4th order boundary stencils
-    dudx[0, :] = (-3 * u[0, :] + 4 * u[1, :] - u[2, :]) * idx_by_2
-    dudx[1, :] = (-u[0, :] + u[2, :]) * idx_by_2
-    dudx[-2, :] = (-u[-3, :] + u[-1, :]) * idx_by_2
-    dudx[-1, :] = (u[-3, :] - 4 * u[-2, :] + 3 * u[-1, :]) * idx_by_2
-
-    return dudx
-
-def grad_y(u,g:Grid2D):
-    dudy = np.zeros_like(u)
-    idy_by_2 = 1.0 / (2 * g.dx[1])
-    idy_by_12 = 1.0 / (12 * g.dx[1])
-
-    # center stencil
-    dudy[:, 2:-2] = (-u[:, 4:] + 8 * u[:, 3:-1] - 8 * u[:, 1:-3] + u[:, 0:-4]) * idy_by_12
-
-    # 4th order boundary stencils
-    dudy[:, 0] = (-3 * u[:, 0] + 4 * u[:, 1] - u[:, 2]) * idy_by_2
-    dudy[:, 1] = (-u[:, 0] + u[:, 2]) * idy_by_2
-    dudy[:, -2] = (-u[:, -3] + u[:, -1]) * idy_by_2
-    dudy[:, -1] = (u[:, -3] - 4 * u[:, -2] + 3 * u[:, -1]) * idy_by_2
-
-    return dudy
-
-
-def grad_xx(u,g):
-    idx_sqrd = 1.0 / g.dx[0]**2
-    idx_sqrd_by_12 = idx_sqrd / 12.0
-    dxxu = np.zeros_like(u)
-    dxxu[2:-2, :] = (-u[4:, :] + 16 * u[3:-1, :] - 30 * u[2:-2, :] + 16 * u[1:-3, :] - u[0:-4, :]) * idx_sqrd_by_12
-    # boundary stencils
-    dxxu[0, :] = (2 * u[0, :] - 5 * u[1, :] + 4 * u[2, :] - u[3, :]) * idx_sqrd
-    dxxu[1, :] = (u[0, :] - 2 * u[1, :] + u[2, :]) * idx_sqrd
-    dxxu[-2, :] = (u[-3, :] - 2 * u[-2, :] + u[-1, :]) * idx_sqrd
-    dxxu[-1, :] = (-u[-4, :] + 4 * u[-3, :] - 5 * u[-2, :] + 2 * u[-1, :]) * idx_sqrd
-    return dxxu
-
-
-def grad_yy(u,g):
-    idy_sqrd = 1.0 / g.dx[1]**2
-    idy_sqrd_by_12 = idy_sqrd / 12.0
-    dyyu = np.zeros_like(u)
-
-    # centered stencils
-    dyyu[:, 2:-2] = (
-                            -u[:, 4:] + 16 * u[:, 3:-1] - 30 * u[:, 2:-2] + 16 * u[:, 1:-3] - u[:, 0:-4]
-                    ) * idy_sqrd_by_12
-
-    # boundary stencils
-    dyyu[:, 0] = (2 * u[:, 0] - 5 * u[:, 1] + 4 * u[:, 2] - u[:, 3]) * idy_sqrd
-    dyyu[:, 1] = (u[:, 0] - 2 * u[:, 1] + u[:, 2]) * idy_sqrd
-    dyyu[:, -2] = (u[:, -3] - 2 * u[:, -2] + u[:, -1]) * idy_sqrd
-    dyyu[:, -1] = (
-                          -u[:, -4] + 4 * u[:, -3] - 5 * u[:, -2] + 2 * u[:, -1]
-                  ) * idy_sqrd
-    return dyyu
-
-
 class ScalarField(Equations):
-    def __init__(self, NU, g: Grid2D, bctype):
+    def __init__(self, NU, g: Grid2D, bctype: str):
         if bctype == "SOMMERFELD":
             apply_bc = BCType.RHS
         elif bctype == "REFLECT":
             apply_bc = BCType.FUNCTION
         else:
-            raise ValueError(
-                    "Invalid boundary condition type. Use 'SOMMERFELD' or 'REFLECT'."
-                )
+            raise ValueError("Invalid boundary condition type. Use 'SOMMERFELD' or 'REFLECT'.")
 
         self.bound_cond = bctype
         super().__init__(NU, g, apply_bc)
-        self.U_PHI = 0
-        self.U_CHI = 1
 
-    def rhs(self, dtu, u, x, y, g: Grid2D):
-        dtphi = dtu[0]
-        dtchi = dtu[1]
-        phi = u[0]
-        chi = u[1]
+        self.dx = float(g.dx[0])
+        self.dy = float(g.dx[1])
+        self.ng = g.nghost
 
-        dtphi[:] = chi[:]
-        dxxphi = grad_xx(phi,g)
-        dyyphi = grad_yy(phi,g)
-        r = np.sqrt(x**2 + y**2)
-        dtchi[:] = dxxphi[:] + dyyphi[:] - np.sin(2*phi)/(r**2+1e-2)
+        self.x = jnp.asarray(g.xi[0])
+        self.y = jnp.asarray(g.xi[1])
+        self.X, self.Y = jnp.meshgrid(self.x, self.y, indexing="ij")
 
-        if self.apply_bc == BCType.RHS and self.bound_cond == "SOMMERFELD":
-                # Sommerfeld boundary conditions
-            x = g.xi[0]
-            y = g.xi[1]
-            Nx = g.shp[0]
-            Ny = g.shp[1]
-            dxphi = grad_x(phi,g)
-            dyphi = grad_y(phi,g)
-            bc_sommerfeld(dtphi, phi, dxphi, dyphi, 1.0, 1, x, y, Nx, Ny)
-            dxchi = grad_x(chi,g)
-            dychi = grad_y(chi,g)
-            bc_sommerfeld(dtchi, chi, dxchi, dychi, 1.0, 1, x, y, Nx, Ny)
+        r = jnp.sqrt(self.X * self.X + self.Y * self.Y)
+        self.inv_r = jnp.where(r > 0.0, 1.0 / r, 0.0)
+        self.inv_rsq_eps = 1.0 / (self.X * self.X + self.Y * self.Y + 1.0e-2)
 
-    def initialize(self, g: Grid2D, params):
-        x = g.xi[0]
-        y = g.xi[1]
-        x0, y0 = params["id_x0"], params["id_y0"]
-        amp, sigma = params["id_amp"], params["id_sigma"]
-        X, Y = np.meshgrid(x, y, indexing="ij")
-        self.u[0][:, :] = np.exp(-((X - x0) ** 2 + (Y - y0) ** 2) / (2 * sigma**2))
-        self.u[1][:, :] = 0.0
+        self.u = jnp.zeros((NU, *g.shp), dtype=jnp.float64)
 
-    def apply_bcs(self, u, g: Grid2D):
-        if self.bound_cond == "REFLECT":
-            bc_reflect(u[0], u[1])
+        apply_sommerfeld = self.apply_bc == BCType.RHS and self.bound_cond == "SOMMERFELD"
+        self._rhs_fn = make_rhs_fn(self.dx, self.dy, self.inv_rsq_eps, self.X, self.Y, self.inv_r, self.ng, apply_sommerfeld)
+        self._apply_bc_fn = make_bc_fn(self.bound_cond)
 
+    def rhs(self, u: jnp.ndarray, *_, **__) -> jnp.ndarray:
+        return self._rhs_fn(u)
 
-def bc_reflect(phi, chi):
-    # Reflective boundary conditions
-    phi[0, :] = 0.0
-    phi[-1, :] = 0.0
-    phi[:, 0] = 0.0
-    phi[:, -1] = 0.0
+    def initialize(self, g: Grid, params):
+        x0 = params["id_x0"]
+        y0 = params["id_y0"]
+        sigma = params["id_sigma"]
 
-    chi[0, :] = (4.0 * chi[1, :] - chi[2, :]) / 3.0
-    chi[-1, :] = (4.0 * chi[-2, :] - chi[-3, :]) / 3.0
-    chi[:, 0] = (4.0 * chi[:, 1] - chi[:, 2]) / 3.0
-    chi[:, -1] = (4.0 * chi[:, -2] - chi[:, -3]) / 3.0
+        phi0 = jnp.exp(-((self.X - x0) ** 2 + (self.Y - y0) ** 2) / (2.0 * sigma * sigma))
+        chi0 = jnp.zeros_like(phi0)
 
-def bc_sommerfeld(dtf, f, dxf, dyf, falloff, ngz, x, y, Nx, Ny):
-    for j in range(Ny):
-        for i in range(ngz):
-            # xmin boundary
-            inv_r = 1.0 / np.sqrt(x[i] ** 2 + y[j] ** 2)
-            dtf[i, j] = (-(x[i] * dxf[i, j] + y[j] * dyf[i, j] + falloff * f[i, j]) * inv_r)
-        for i in range(Nx - ngz, Nx):
-            # xmax boundary
-            inv_r = 1.0 / np.sqrt(x[i] ** 2 + y[j] ** 2)
-            dtf[i, j] = (-(x[i] * dxf[i, j] + y[j] * dyf[i, j] + falloff * f[i, j]) * inv_r)
+        self.u = self.u.at[0].set(phi0)
+        self.u = self.u.at[1].set(chi0)
 
-    for i in range(Nx):
-        for j in range(ngz):
-            # ymin boundary
-            inv_r = 1.0 / np.sqrt(x[i] ** 2 + y[j] ** 2)
-            dtf[i, j] = (-(x[i] * dxf[i, j] + y[j] * dyf[i, j] + falloff * f[i, j]) * inv_r)
-        for j in range(Ny - ngz, Ny):
-            # ymax boundary
-            inv_r = 1.0 / np.sqrt(x[i] ** 2 + y[j] ** 2)
-            dtf[i, j] = (-(x[i] * dxf[i, j] + y[j] * dyf[i, j] + falloff * f[i, j]) * inv_r)
+        if self._apply_bc_fn is not None:
+            self.u = self._apply_bc_fn(self.u)
+
+    def apply_bcs(self, u: jnp.ndarray, *_, **__) -> jnp.ndarray:
+        if self._apply_bc_fn is None:
+            return u
+        return self._apply_bc_fn(u)
 
 
-def rk2(eqs, g, dt, x, y, fltr):
-    nu = eqs.u.shape[0]
-    up = np.empty_like(eqs.u)
-    k1 = np.empty_like(eqs.u)
-
-
-    eqs.rhs(k1, eqs.u ,x, y, g)
-    # Apply KO filter as dissipative RHS term (stage 1)
-    for i in range(nu):
-        k1[i] += fltr.apply(eqs.u[i])
-
-    up[:] = eqs.u + 0.5 * dt * k1
-    eqs.rhs(k1, up, x, y, g)
-
-    # Apply KO filter as dissipative RHS term (stage 2)
-    for i in range(nu):
-        k1[i] += fltr.apply(up[i])
-
-    eqs.u[:] = eqs.u + dt * k1
-
-
-def main(parfile):
-
-    #Read the parfile
-    with open(parfile,"rb") as f:
+def main(parfile: str):
+    with open(parfile, "rb") as f:
         params = tomllib.load(f)
-    g = Grid2D(params)
-    x = g.xi[0]
-    y = g.xi[1]
-    dx = g.dx[0]
-    dy = g.dx[1]
 
+    g = Grid2D(params)
     eqs = ScalarField(2, g, params["bound_cond"])
     eqs.initialize(g, params)
+
+    dt = params["cfl"] * g.dx[0]
+    sigma = params.get("ko_sigma", 0.1) #At most 0.4
+    filter_fn = make_filter_fn(eqs.dx, eqs.dy, sigma, False)
+    step_fn = make_rk2_step(eqs.rhs, filter_fn, dt, eqs._apply_bc_fn)
 
     output_dir = params["output_dir"]
     output_interval = params["output_interval"]
     os.makedirs(output_dir, exist_ok=True)
 
-    dt = params["cfl"] * dx
+    func_names = ["phi", "chi"]
 
-    # Setup KO filter
-    fltr = KreissOligerFilterO6_2D(dx, dy, sigma=params.get("ko_sigma", 0.1), filter_boundary=True)
-
-    time = 0.0
-    func_names = ["phi","chi"]
-    iox.write_hdf5(0,eqs.u,x,y,func_names,output_dir)
+    x_np = np.asarray(g.xi[0])
+    y_np = np.asarray(g.xi[1])
+    iox.write_hdf5(0, np.asarray(eqs.u), x_np, y_np, func_names, output_dir)
 
     Nt = params["Nt"]
+    time = 0.0
 
-    for i in range(1, Nt +1):
-        rk2(eqs, g, dt, x, y, fltr)
+    for step in range(1, Nt + 1):
+        eqs.u = step_fn(eqs.u)
         time += dt
-        print(f"Step {i:d} t={time:.2e}")
-        if i % output_interval == 0:
-            iox.write_hdf5(i,eqs.u,x,y,func_names,output_dir)
+        print(f"Step {step:d} t={time:.2e} ||phi||={np.linalg.norm(eqs.u[0],"fro"):.2e}  ||chi||={np.linalg.norm(eqs.u[1],"fro"):.2e}")
+
+        if step % output_interval == 0:
+            iox.write_hdf5(step, np.asarray(eqs.u), x_np, y_np, func_names, output_dir)
+
     iox.write_xdmf(output_dir, Nt, g.shp[0], g.shp[1], func_names, output_interval, dt)
 
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("Usage:  python JaxSolver.py <parfile>")
+        print("Usage: python JaxSolver.py <parfile>")
         sys.exit(1)
-    parfile = sys.argv[1]
-    main(parfile)
+    main(sys.argv[1])

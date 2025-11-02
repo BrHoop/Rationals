@@ -47,7 +47,7 @@ class KreissOligerFilterO6_2D():
         dx = self.dx
         sigma = self.sigma
         fbound = self.filter_boundary
-        self._apply_ko6_filter_x(dux, u, dx, sigma, fbound, self.f)
+        self._apply_ko6_filter_x(dux, u, dx, sigma, fbound)
         return dux
 
     def filter_y(self, u):
@@ -57,7 +57,7 @@ class KreissOligerFilterO6_2D():
         dy = self.dy
         sigma = self.sigma
         fbound = self.filter_boundary
-        self._apply_ko6_filter_y(duy, u ,dy, sigma, fbound, self.f)
+        self._apply_ko6_filter_y(duy, u ,dy, sigma, fbound)
         return duy
 
     def apply(self, u):
@@ -66,65 +66,63 @@ class KreissOligerFilterO6_2D():
         """
         return self.filter_x(u) + self.filter_y(u)
 
-    @staticmethod
-    @njit
-    def _apply_ko6_filter_x(du : np.ndarray, u : np.ndarray, dx : float, sigma : float, filter_boundary : bool, f):
-        factor = f.fixed_div(sigma, 64 * dx)
+
+    def _apply_ko6_filter_x(self, du, u, dx, sigma, filter_boundary):
+        factor = self.f.fixed_div(sigma, 64 * dx)
 
         # centered stencil
-        du[3:-3,:] = f.fixed_mul(factor,(u[:-6,:] - 6 * u[1:-5,:] + 15 * u[2:-4,:] - 20 * u[3:-3,:] + 15 * u[4:-2,:] - 6 * u[5:-1,:] + u[6:,:]))
+        du[3:-3,:] = self.f.fixed_mul(factor,(u[:-6,:] - 6 * u[1:-5,:] + 15 * u[2:-4,:] - 20 * u[3:-3,:] + 15 * u[4:-2,:] - 6 * u[5:-1,:] + u[6:,:]))
 
         if filter_boundary:
-            smr3 = f.fixed_div(f.to_fixed_scalar(9), 48*64*dx)
-            smr2 = f.fixed_div(f.to_fixed_scalar(43), 48*64*dx)
-            smr1 = f.fixed_div(f.to_fixed_scalar(49), 48*64*dx)
+            smr3 = self.f.fixed_div(self.f.to_fixed_scalar(9), 48*64*dx)
+            smr2 = self.f.fixed_div(self.f.to_fixed_scalar(43), 48*64*dx)
+            smr1 = self.f.fixed_div(self.f.to_fixed_scalar(49), 48*64*dx)
 
             spr3 = smr3
             spr2 = smr2
             spr1 = smr1
 
 
-            du[0,:] = f.fixed_div(f.fixed_mul(sigma, (-u[0,:] + 3 * u[1,:] - 3 * u[2,:] + u[3,:])),smr3)
+            du[0,:] = self.f.fixed_div(self.f.fixed_mul(sigma, (-u[0,:] + 3 * u[1,:] - 3 * u[2,:] + u[3,:])),smr3)
 
-            du[1,:] = f.fixed_div(f.fixed_mul(sigma, (3 * u[0,:] - 10 * u[1,:] + 12 * u[2,:] - 6 * u[3,:] + u[4,:])),smr2)
+            du[1,:] = self.f.fixed_div(self.f.fixed_mul(sigma, (3 * u[0,:] - 10 * u[1,:] + 12 * u[2,:] - 6 * u[3,:] + u[4,:])),smr2)
 
-            du[2,:] = f.fixed_div(f.fixed_mul(sigma, (-3 * u[0,:] + 12 * u[1,:] - 19 * u[2,:] + 15 * u[3,:] - 6.0 * u[4,:] + u[5,:])),smr1)
+            du[2,:] = self.f.fixed_div(self.f.fixed_mul(sigma, (-3 * u[0,:] + 12 * u[1,:] - 19 * u[2,:] + 15 * u[3,:] - 6.0 * u[4,:] + u[5,:])),smr1)
 
-            du[-3,:] = f.fixed_div(f.fixed_mul(sigma, (u[-6,:] - 6 * u[-5,:] + 15 * u[-4,:] - 19 * u[-3,:] + 12 * u[-2,:] - 3 * u[-1,:])),spr1)
+            du[-3,:] = self.f.fixed_div(self.f.fixed_mul(sigma, (u[-6,:] - 6 * u[-5,:] + 15 * u[-4,:] - 19 * u[-3,:] + 12 * u[-2,:] - 3 * u[-1,:])),spr1)
 
-            du[-2,:] = f.fixed_div(f.fixed_mul(sigma, (u[-5,:] - 6 * u[-4,:] + 12 * u[-3,:] - 10 * u[-2,:] + 3 * u[-1,:])),spr2)
+            du[-2,:] = self.f.fixed_div(self.f.fixed_mul(sigma, (u[-5,:] - 6 * u[-4,:] + 12 * u[-3,:] - 10 * u[-2,:] + 3 * u[-1,:])),spr2)
 
-            du[-1,:] = f.fixed_div(f.fixed_mul(sigma, (u[-4,:] - 3 * u[-3,:] + 3 * u[-2,:] - u[-1,:])),spr3)
+            du[-1,:] = self.f.fixed_div(self.f.fixed_mul(sigma, (u[-4,:] - 3 * u[-3,:] + 3 * u[-2,:] - u[-1,:])),spr3)
 
-    @staticmethod
-    @njit
-    def _apply_ko6_filter_y(du: np.ndarray, u: np.ndarray, dy: float, sigma: float, filter_boundary: bool, f):
-        factor = f.fixed_div(sigma, 64 * dy)
+
+    def _apply_ko6_filter_y(self, du: np.ndarray, u: np.ndarray, dy: float, sigma: float, filter_boundary: bool):
+        factor = self.f.fixed_div(sigma, 64 * dy)
 
         # centered stencil
-        du[:,3:-3] = f.fixed_mul(factor,(u[:,:-6] - 6 * u[:,1:-5] + 15 * u[:,2:-4] - 20 * u[:,3:-3] + 15 * u[:,4:-2] - 6 * u[:,5:-1] + u[:,6:]))
+        du[:,3:-3] = self.f.fixed_mul(factor,(u[:,:-6] - 6 * u[:,1:-5] + 15 * u[:,2:-4] - 20 * u[:,3:-3] + 15 * u[:,4:-2] - 6 * u[:,5:-1] + u[:,6:]))
 
 
         if filter_boundary:
-            smr3 = f.fixed_div(f.to_fixed_scalar(9), 48*64*dy)
-            smr2 = f.fixed_div(f.to_fixed_scalar(43), 48*64*dy)
-            smr1 = f.fixed_div(f.to_fixed_scalar(49), 48*64*dy)
+            smr3 = self.f.fixed_div(self.f.to_fixed_scalar(9), 48*64*dy)
+            smr2 = self.f.fixed_div(self.f.to_fixed_scalar(43), 48*64*dy)
+            smr1 = self.f.fixed_div(self.f.to_fixed_scalar(49), 48*64*dy)
 
             spr3 = smr3
             spr2 = smr2
             spr1 = smr1
 
-            du[:,0] = f.fixed_div(f.fixed_mul(sigma, (-u[:,0] + 3 * u[:,1] - 3 * u[:,2] + u[:,3])),smr3)
+            du[:,0] = self.f.fixed_div(self.f.fixed_mul(sigma, (-u[:,0] + 3 * u[:,1] - 3 * u[:,2] + u[:,3])),smr3)
 
-            du[:,1] = f.fixed_div(f.fixed_mul(sigma, (3 * u[:,0] - 10 * u[:,1] + 12 * u[:,2] - 6 * u[:,3] + u[:,4])),smr2)
+            du[:,1] = self.f.fixed_div(self.f.fixed_mul(sigma, (3 * u[:,0] - 10 * u[:,1] + 12 * u[:,2] - 6 * u[:,3] + u[:,4])),smr2)
 
-            du[:,2] = f.fixed_div(f.fixed_mul(sigma, (-3 * u[:,0] + 12 * u[:,1] - 19 * u[:,2] + 15 * u[:,3] - 6.0 * u[:,4] + u[:,5])),smr1)
+            du[:,2] = self.f.fixed_div(self.f.fixed_mul(sigma, (-3 * u[:,0] + 12 * u[:,1] - 19 * u[:,2] + 15 * u[:,3] - 6.0 * u[:,4] + u[:,5])),smr1)
 
-            du[:,-3] = f.fixed_div(f.fixed_mul(sigma, (u[:,-6] - 6 * u[:,-5] + 15 * u[:,-4] - 19 * u[:,-3] + 12 * u[:,-2] - 3 * u[:,1])),spr1)
+            du[:,-3] = self.f.fixed_div(self.f.fixed_mul(sigma, (u[:,-6] - 6 * u[:,-5] + 15 * u[:,-4] - 19 * u[:,-3] + 12 * u[:,-2] - 3 * u[:,1])),spr1)
 
-            du[:,-2] = f.fixed_div(f.fixed_mul(sigma, (u[:,-5] - 6 * u[:,-4] + 12 * u[:,-3] - 10 * u[:,-2] + 3 * u[:,-1])),spr2)
+            du[:,-2] = self.f.fixed_div(self.f.fixed_mul(sigma, (u[:,-5] - 6 * u[:,-4] + 12 * u[:,-3] - 10 * u[:,-2] + 3 * u[:,-1])),spr2)
 
-            du[:,-1] = f.fixed_div(f.fixed_mul(sigma, (u[:,-4] - 3 * u[:,-3] + 3 * u[:,-2] - u[:,-1])),spr3)
+            du[:,-1] = self.f.fixed_div(self.f.fixed_mul(sigma, (u[:,-4] - 3 * u[:,-3] + 3 * u[:,-2] - u[:,-1])),spr3)
 
 
 
@@ -282,12 +280,12 @@ class ScalarField(Equations):
         dtchi = dtu[1]
         phi = u[0]
         chi = u[1]
-
+        X, Y = np.meshgrid(x, y, indexing="ij")
         dtphi[:] = chi[:]
         dxxphi = grad_xx(phi, g)
         dyyphi = grad_yy(phi, g)
-        r = np.sqrt(x**2+y**2)
-        dtchi[:] = dxxphi[:] + dyyphi[:] - g.f.to_fixed_array(np.sin(2*g.f.from_fixed_array(phi))/(r**2+1e-2))
+        r = X**2+Y**2
+        dtchi[:] = dxxphi[:] + dyyphi[:] - g.f.to_fixed_array(np.sin(2*g.f.from_fixed_array(phi))/(r+1e-2))
 
         if self.apply_bc == BCType.RHS and self.bound_cond == "SOMMERFELD":
             x = g.xi[0]
@@ -305,7 +303,6 @@ class ScalarField(Equations):
     def initialize(self, g: Grid2D, params):
         x = g.f.from_fixed_array(g.xi[0])
         y = g.f.from_fixed_array(g.xi[1])
-
         x0, y0 = params["id_x0"], params["id_y0"]
         amp, sigma = params["id_amp"], params["id_sigma"]
         X, Y = np.meshgrid(x, y, indexing="ij")
@@ -447,7 +444,7 @@ def main(parfile: str):
     dt = g.f.fixed_mul(g.f.to_fixed_scalar(params["cfl"]), g.dx[0])
 
     #Setup KO filter
-    flt = KreissOligerFilterO6_2D(g.dx[0], g.dx[1], sigma=params.get("ko_sigma", 0.1), f=g.f,filter_boundary=True)
+    flt = KreissOligerFilterO6_2D(g.dx[0], g.dx[1], sigma=params.get("ko_sigma", 0.01), f=g.f,filter_boundary=True)
 
     time_fixed = 0
     func_names = ["phi", "chi"]
