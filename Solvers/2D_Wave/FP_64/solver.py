@@ -356,25 +356,27 @@ def bc_reflect(phi, chi):
     chi[:, -1] = (4.0 * chi[:, -2] - chi[:, -3]) / 3.0
 
 def bc_sommerfeld(dtf, f, dxf, dyf, falloff, ngz, x, y, Nx, Ny):
+    eps = 1e-12
+    # Use face normals rather than radial vectors for Sommerfeld projection.
     for j in range(Ny):
         for i in range(ngz):
             # xmin boundary
-            inv_r = 1.0 / np.sqrt(x[i] ** 2 + y[j] ** 2)
-            dtf[i, j] = (-(x[i] * dxf[i, j] + y[j] * dyf[i, j] + falloff * f[i, j]) * inv_r)
+            r = max(np.hypot(x[i], y[j]), eps)
+            dtf[i, j] = dxf[i, j] - falloff * f[i, j] / r
         for i in range(Nx - ngz, Nx):
             # xmax boundary
-            inv_r = 1.0 / np.sqrt(x[i] ** 2 + y[j] ** 2)
-            dtf[i, j] = (-(x[i] * dxf[i, j] + y[j] * dyf[i, j] + falloff * f[i, j]) * inv_r)
+            r = max(np.hypot(x[i], y[j]), eps)
+            dtf[i, j] = -dxf[i, j] - falloff * f[i, j] / r
 
     for i in range(Nx):
         for j in range(ngz):
             # ymin boundary
-            inv_r = 1.0 / np.sqrt(x[i] ** 2 + y[j] ** 2)
-            dtf[i, j] = (-(x[i] * dxf[i, j] + y[j] * dyf[i, j] + falloff * f[i, j]) * inv_r)
+            r = max(np.hypot(x[i], y[j]), eps)
+            dtf[i, j] = dyf[i, j] - falloff * f[i, j] / r
         for j in range(Ny - ngz, Ny):
             # ymax boundary
-            inv_r = 1.0 / np.sqrt(x[i] ** 2 + y[j] ** 2)
-            dtf[i, j] = (-(x[i] * dxf[i, j] + y[j] * dyf[i, j] + falloff * f[i, j]) * inv_r)
+            r = max(np.hypot(x[i], y[j]), eps)
+            dtf[i, j] = -dyf[i, j] - falloff * f[i, j] / r
 
 
 def rk2(eqs, g, dt, x, y, fltr):

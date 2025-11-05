@@ -173,7 +173,7 @@ def make_grad_yy(fp, idy_sq, idy_sq_by_12):
     return grad_yy
 
 
-def make_sommerfeld_fn(fp, x_float, y_float, inv_r_float, ng, falloff=1.0):
+def make_sommerfeld_fn(fp, radius_fixed, ng, falloff=1.0):
     if ng <= 0:
         @jax.jit
         def passthrough(dtf, *_args):
@@ -181,24 +181,19 @@ def make_sommerfeld_fn(fp, x_float, y_float, inv_r_float, ng, falloff=1.0):
 
         return passthrough
 
-    x_float = jnp.asarray(x_float, dtype=jnp.float64)
-    y_float = jnp.asarray(y_float, dtype=jnp.float64)
-    inv_r_float = jnp.asarray(inv_r_float, dtype=jnp.float64)
-    falloff = float(falloff)
+    radius_fixed = jnp.asarray(radius_fixed, dtype=jnp.int64)
+    falloff_fixed = jnp.asarray(fp.to_fixed_scalar(float(falloff)), dtype=jnp.int64)
+    eps_fixed = max(fp.to_fixed_scalar(1.0e-12), 1)
+    radius_fixed = jnp.maximum(radius_fixed, jnp.asarray(eps_fixed, dtype=jnp.int64))
 
     @jax.jit
     def sommerfeld(dtf, f, dxf, dyf):
-        damping = (
-            x_float * fp.from_fixed_array(dxf)
-            + y_float * fp.from_fixed_array(dyf)
-            + falloff * fp.from_fixed_array(f)
-        )
-        update_fixed = fp.float_to_fixed(-damping * inv_r_float)
-
-        dtf = dtf.at[:ng, :].set(update_fixed[:ng, :])
-        dtf = dtf.at[-ng:, :].set(update_fixed[-ng:, :])
-        dtf = dtf.at[:, :ng].set(update_fixed[:, :ng])
-        dtf = dtf.at[:, -ng:].set(update_fixed[:, -ng:])
+        falloff_term = fp.fixed_div(fp.fixed_mul(falloff_fixed, f), radius_fixed)
+        # Use face normals rather than radial vectors for Sommerfeld projection.
+        dtf = dtf.at[:ng, :].set(dxf[:ng, :] - falloff_term[:ng, :])
+        dtf = dtf.at[-ng:, :].set(-dxf[-ng:, :] - falloff_term[-ng:, :])
+        dtf = dtf.at[:, :ng].set(dyf[:, :ng] - falloff_term[:, :ng])
+        dtf = dtf.at[:, -ng:].set(-dyf[:, -ng:] - falloff_term[:, -ng:])
         return dtf
 
     return sommerfeld
@@ -498,7 +493,9 @@ class ScalarField(Equations):
         self.X_float, self.Y_float = jnp.meshgrid(self.x_float, self.y_float, indexing="ij")
 
         r_sq = self.X_float**2 + self.Y_float**2
-        self.inv_r = jnp.where(r_sq > 0.0, 1.0 / jnp.sqrt(r_sq), 0.0)
+        radius_float = jnp.maximum(jnp.sqrt(r_sq), 1.0e-12)
+        eps_fixed = max(self.fp.to_fixed_scalar(1.0e-12), 1)
+        self.radius_fixed = jnp.maximum(self.fp.float_to_fixed(radius_float), jnp.asarray(eps_fixed, dtype=jnp.int64))
         self.inv_rsq_eps = 1.0 / (r_sq + 1.0e-2)
 
         idx_by_2 = self.fp.np_impl.fixed_div(self.fp.to_fixed_scalar(1.0), 2 * self.dx)
@@ -521,9 +518,7 @@ class ScalarField(Equations):
         apply_sommerfeld = self.apply_bc == BCType.RHS and self.bound_cond == "SOMMERFELD"
         self._sommerfeld_fn = make_sommerfeld_fn(
             self.fp,
-            self.X_float,
-            self.Y_float,
-            self.inv_r,
+            self.radius_fixed,
             self.ng,
             falloff=1.0,
         )
