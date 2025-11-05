@@ -426,7 +426,7 @@ def main(parfile):
     dt = params["cfl"] * dx
 
     # Setup KO filter
-    fltr = KreissOligerFilterO6_2D(dx, dy, sigma=params.get("ko_sigma", 0.1), filter_boundary=True)
+    fltr = KreissOligerFilterO6_2D(dx, dy, sigma=params.get("ko_sigma", 0.1), filter_boundary=False)
 
     time = 0.0
     func_names = ["phi","chi"]
