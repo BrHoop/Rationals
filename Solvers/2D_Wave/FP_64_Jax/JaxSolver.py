@@ -203,20 +203,19 @@ def sommerfeld_rhs(
     f: jnp.ndarray,
     dxf: jnp.ndarray,
     dyf: jnp.ndarray,
-    x: jnp.ndarray,
-    y: jnp.ndarray,
-    inv_r: jnp.ndarray,
+    radius: jnp.ndarray,
     ng: int,
     falloff: float = 1.0,
 ) -> jnp.ndarray:
     if ng == 0:
         return dtf
 
-    update = -(x * dxf + y * dyf + falloff * f) * inv_r
-    dtf = dtf.at[:ng, :].set(update[:ng, :])
-    dtf = dtf.at[-ng:, :].set(update[-ng:, :])
-    dtf = dtf.at[:, :ng].set(update[:, :ng])
-    dtf = dtf.at[:, -ng:].set(update[:, -ng:])
+    falloff_term = falloff * f / radius
+    # Use face normals rather than radial vectors for Sommerfeld projection.
+    dtf = dtf.at[:ng, :].set(dxf[:ng, :] - falloff_term[:ng, :])
+    dtf = dtf.at[-ng:, :].set(-dxf[-ng:, :] - falloff_term[-ng:, :])
+    dtf = dtf.at[:, :ng].set(dyf[:, :ng] - falloff_term[:, :ng])
+    dtf = dtf.at[:, -ng:].set(-dyf[:, -ng:] - falloff_term[:, -ng:])
     return dtf
 
 
@@ -241,9 +240,7 @@ def make_rhs_fn(
     dx: float,
     dy: float,
     inv_rsq_eps: jnp.ndarray,
-    x: jnp.ndarray,
-    y: jnp.ndarray,
-    inv_r: jnp.ndarray,
+    radius: jnp.ndarray,
     ng: int,
     apply_sommerfeld: bool,
 ):
@@ -259,11 +256,11 @@ def make_rhs_fn(
         if apply_sommerfeld:
             dxphi = grad_x(phi, dx)
             dyphi = grad_y(phi, dy)
-            dtphi = sommerfeld_rhs(dtphi, phi, dxphi, dyphi, x, y, inv_r, ng)
+            dtphi = sommerfeld_rhs(dtphi, phi, dxphi, dyphi, radius, ng)
 
             dxchi = grad_x(chi, dx)
             dychi = grad_y(chi, dy)
-            dtchi = sommerfeld_rhs(dtchi, chi, dxchi, dychi, x, y, inv_r, ng)
+            dtchi = sommerfeld_rhs(dtchi, chi, dxchi, dychi, radius, ng)
 
         return jnp.stack((dtphi, dtchi), axis=0)
 
@@ -363,14 +360,15 @@ class ScalarField(Equations):
         self.y = jnp.asarray(g.xi[1])
         self.X, self.Y = jnp.meshgrid(self.x, self.y, indexing="ij")
 
-        r = jnp.sqrt(self.X * self.X + self.Y * self.Y)
-        self.inv_r = jnp.where(r > 0.0, 1.0 / r, 0.0)
-        self.inv_rsq_eps = 1.0 / (self.X * self.X + self.Y * self.Y + 1.0e-2)
+        r_sq = self.X * self.X + self.Y * self.Y
+        radius = jnp.maximum(jnp.sqrt(r_sq), 1.0e-12)
+        self.radius = radius
+        self.inv_rsq_eps = 1.0 / (r_sq + 1.0e-2)
 
         self.u = jnp.zeros((NU, *g.shp), dtype=jnp.float64)
 
         apply_sommerfeld = self.apply_bc == BCType.RHS and self.bound_cond == "SOMMERFELD"
-        self._rhs_fn = make_rhs_fn(self.dx, self.dy, self.inv_rsq_eps, self.X, self.Y, self.inv_r, self.ng, apply_sommerfeld)
+        self._rhs_fn = make_rhs_fn(self.dx, self.dy, self.inv_rsq_eps, self.radius, self.ng, apply_sommerfeld)
         self._apply_bc_fn = make_bc_fn(self.bound_cond)
 
     def rhs(self, u: jnp.ndarray, *_, **__) -> jnp.ndarray:

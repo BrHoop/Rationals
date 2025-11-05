@@ -171,15 +171,15 @@ class Grid2D(Grid):
         super().__init__(shp, [xi_x, xi_y], dxn, ng)
 
 
-def _fixed_inverse_length(fp: fixed_point, x_val: int, y_val: int) -> int:
+def _fixed_radius(fp: fixed_point, x_val: int, y_val: int, eps_fixed: int) -> int:
     """
-    Return 1/sqrt(x^2 + y^2) in fixed-point form.
+    Return max(hypot(x, y), eps) in fixed-point form; eps is already fixed point.
     """
     r_sq = fp.fixed_mul(x_val, x_val) + fp.fixed_mul(y_val, y_val)
-    if r_sq <= 0:
-        return 0
-    inv = 1.0 / math.sqrt(fp.from_fixed_scalar(r_sq))
-    return fp.to_fixed_scalar(inv)
+    r_float = math.sqrt(max(fp.from_fixed_scalar(r_sq), 0.0))
+    eps_float = fp.from_fixed_scalar(eps_fixed)
+    r_fixed = fp.to_fixed_scalar(max(r_float, eps_float))
+    return r_fixed if r_fixed != 0 else eps_fixed
 
 
 def grad_x(u: np.ndarray, g: Grid2D) -> np.ndarray:
@@ -344,61 +344,37 @@ def bc_sommerfeld(
     if ngz <= 0:
         return
 
+    eps_fixed = fp.to_fixed_scalar(1e-12)
+    if eps_fixed <= 0:
+        eps_fixed = 1
+    # Use face normals rather than radial vectors for Sommerfeld projection.
     for j in range(Ny):
         y_val = y[j]
         for i in range(ngz):
             x_val = x[i]
-            inv_r = _fixed_inverse_length(fp, x_val, y_val)
-            if inv_r == 0:
-                dtf[i, j] = 0
-            else:
-                damping = (
-                    fp.fixed_mul(x_val, dxf[i, j])
-                    + fp.fixed_mul(y_val, dyf[i, j])
-                    + fp.fixed_mul(falloff, f[i, j])
-                )
-                dtf[i, j] = -fp.fixed_mul(damping, inv_r)
+            r = _fixed_radius(fp, x_val, y_val, eps_fixed)
+            falloff_term = fp.fixed_div(fp.fixed_mul(falloff, f[i, j]), r)
+            dtf[i, j] = dxf[i, j] - falloff_term
 
         for i in range(Nx - ngz, Nx):
             x_val = x[i]
-            inv_r = _fixed_inverse_length(fp, x_val, y_val)
-            if inv_r == 0:
-                dtf[i, j] = 0
-            else:
-                damping = (
-                    fp.fixed_mul(x_val, dxf[i, j])
-                    + fp.fixed_mul(y_val, dyf[i, j])
-                    + fp.fixed_mul(falloff, f[i, j])
-                )
-                dtf[i, j] = -fp.fixed_mul(damping, inv_r)
+            r = _fixed_radius(fp, x_val, y_val, eps_fixed)
+            falloff_term = fp.fixed_div(fp.fixed_mul(falloff, f[i, j]), r)
+            dtf[i, j] = -dxf[i, j] - falloff_term
 
     for i in range(Nx):
         x_val = x[i]
         for j in range(ngz):
             y_val = y[j]
-            inv_r = _fixed_inverse_length(fp, x_val, y_val)
-            if inv_r == 0:
-                dtf[i, j] = 0
-            else:
-                damping = (
-                    fp.fixed_mul(x_val, dxf[i, j])
-                    + fp.fixed_mul(y_val, dyf[i, j])
-                    + fp.fixed_mul(falloff, f[i, j])
-                )
-                dtf[i, j] = -fp.fixed_mul(damping, inv_r)
+            r = _fixed_radius(fp, x_val, y_val, eps_fixed)
+            falloff_term = fp.fixed_div(fp.fixed_mul(falloff, f[i, j]), r)
+            dtf[i, j] = dyf[i, j] - falloff_term
 
         for j in range(Ny - ngz, Ny):
             y_val = y[j]
-            inv_r = _fixed_inverse_length(fp, x_val, y_val)
-            if inv_r == 0:
-                dtf[i, j] = 0
-            else:
-                damping = (
-                    fp.fixed_mul(x_val, dxf[i, j])
-                    + fp.fixed_mul(y_val, dyf[i, j])
-                    + fp.fixed_mul(falloff, f[i, j])
-                )
-                dtf[i, j] = -fp.fixed_mul(damping, inv_r)
+            r = _fixed_radius(fp, x_val, y_val, eps_fixed)
+            falloff_term = fp.fixed_div(fp.fixed_mul(falloff, f[i, j]), r)
+            dtf[i, j] = -dyf[i, j] - falloff_term
 
 
 def rk2(eqs: ScalarField, x, y, g: Grid2D, dt: int,flt:KreissOligerFilterO6_2D):
