@@ -363,7 +363,7 @@ class ScalarField(Equations):
         r_sq = self.X * self.X + self.Y * self.Y
         radius = jnp.maximum(jnp.sqrt(r_sq), 1.0e-12)
         self.radius = radius
-        self.inv_rsq_eps = 1.0 / (r_sq + 1.0e-2)
+        self.inv_rsq_eps = 1.0 / (r_sq + 1.0e-5)
 
         self.u = jnp.zeros((NU, *g.shp), dtype=jnp.float64)
 

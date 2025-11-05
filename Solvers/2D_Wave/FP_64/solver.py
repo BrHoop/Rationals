@@ -18,7 +18,7 @@ class KreissOligerFilterO6_2D():
     Kreiss-Oliger filter in 2D
     """
 
-    def __init__(self, dx, dy, sigma, filter_boundary=True):
+    def __init__(self, dx, dy, sigma, filter_boundary=False):
         self.sigma = sigma
         self.filter_boundary = filter_boundary
         self.dx = dx

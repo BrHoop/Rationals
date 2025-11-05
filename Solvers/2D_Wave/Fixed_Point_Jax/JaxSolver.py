@@ -496,7 +496,7 @@ class ScalarField(Equations):
         radius_float = jnp.maximum(jnp.sqrt(r_sq), 1.0e-12)
         eps_fixed = max(self.fp.to_fixed_scalar(1.0e-12), 1)
         self.radius_fixed = jnp.maximum(self.fp.float_to_fixed(radius_float), jnp.asarray(eps_fixed, dtype=jnp.int64))
-        self.inv_rsq_eps = 1.0 / (r_sq + 1.0e-2)
+        self.inv_rsq_eps = 1.0 / (r_sq + 1.0e-5)
 
         idx_by_2 = self.fp.np_impl.fixed_div(self.fp.to_fixed_scalar(1.0), 2 * self.dx)
         idx_by_12 = self.fp.np_impl.fixed_div(self.fp.to_fixed_scalar(1.0), 12 * self.dx)

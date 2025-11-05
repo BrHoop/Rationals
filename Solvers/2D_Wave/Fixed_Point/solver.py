@@ -285,7 +285,7 @@ class ScalarField(Equations):
         dxxphi = grad_xx(phi, g)
         dyyphi = grad_yy(phi, g)
         r = X**2+Y**2
-        dtchi[:] = dxxphi[:] + dyyphi[:] - g.f.to_fixed_array(np.sin(2*g.f.from_fixed_array(phi))/(r+1e-2))
+        dtchi[:] = dxxphi[:] + dyyphi[:] - g.f.to_fixed_array(np.sin(2*g.f.from_fixed_array(phi))/(r+1e-5))
 
         if self.apply_bc == BCType.RHS and self.bound_cond == "SOMMERFELD":
             x = g.xi[0]
