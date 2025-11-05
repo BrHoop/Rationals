@@ -383,18 +383,24 @@ def rk2(eqs, g, dt, x, y, fltr):
     nu = eqs.u.shape[0]
     up = np.empty_like(eqs.u)
     k1 = np.empty_like(eqs.u)
+    if eqs.apply_bc == BCType.FUNCTION:
+        eqs.apply_bcs(eqs.u, g)
     eqs.rhs(k1, eqs.u ,x, y, g)
     # Apply KO filter as dissipative RHS term (stage 1)
     for i in range(nu):
         k1[i] += fltr.apply(eqs.u[i])
 
     up[:] = eqs.u + 0.5 * dt * k1
+    if eqs.apply_bc == BCType.FUNCTION:
+        eqs.apply_bcs(up, g)
     eqs.rhs(k1, up, x, y, g)
     # Apply KO filter as dissipative RHS term (stage 2)
     for i in range(nu):
         k1[i] += fltr.apply(up[i])
 
     eqs.u[:] = eqs.u + dt * k1
+    if eqs.apply_bc == BCType.FUNCTION:
+        eqs.apply_bcs(eqs.u, g)
 
 
 def main(parfile):
@@ -410,6 +416,8 @@ def main(parfile):
 
     eqs = ScalarField(2, g, params["bound_cond"])
     eqs.initialize(g, params)
+    if eqs.apply_bc == BCType.FUNCTION:
+        eqs.apply_bcs(eqs.u, g)
 
     output_dir = params["output_dir"]
     output_interval = params["output_interval"]
