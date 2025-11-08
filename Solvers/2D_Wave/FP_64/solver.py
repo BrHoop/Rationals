@@ -58,7 +58,7 @@ class KreissOligerFilterO6_2D():
         return self.filter_x(u) + self.filter_y(u)
 
     @staticmethod
-    @njit
+    @njit(cache=True)
     def _apply_ko6_filter_x(du : np.ndarray, u : np.ndarray, dx : float, sigma : float, filter_boundary : bool):
         factor = sigma / (64.0 * dx)
 
@@ -119,7 +119,7 @@ class KreissOligerFilterO6_2D():
 
 
     @staticmethod
-    @njit
+    @njit(cache=True)
     def _apply_ko6_filter_y(du: np.ndarray, u: np.ndarray, dy: float, sigma: float, filter_boundary: bool):
         factor = sigma / (64.0 * dy)
 

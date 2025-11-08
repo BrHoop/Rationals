@@ -33,8 +33,8 @@ class KreissOligerFilterO6_2D():
         self.f = f
         self.sigma = self.f.to_fixed_scalar(sigma) #Lets store sigma in its fixed point form.
         self.filter_boundary = filter_boundary
-        self.dx = self.f.to_fixed_scalar(dx)
-        self.dy = self.f.to_fixed_scalar(dy)
+        self.dx = dx
+        self.dy = dy
         self.frequency = 1
 
     def get_sigma(self):
@@ -284,8 +284,7 @@ class ScalarField(Equations):
         dtphi[:] = chi[:]
         dxxphi = grad_xx(phi, g)
         dyyphi = grad_yy(phi, g)
-        r = X**2+Y**2
-        dtchi[:] = dxxphi[:] + dyyphi[:] - g.f.to_fixed_array(np.sin(2*g.f.from_fixed_array(phi))/(r+1e-5))
+        dtchi[:] = dxxphi[:] + dyyphi[:] - g.f.to_fixed_array(np.sin(2*g.f.from_fixed_array(phi))/(X**2+Y**2+1e-5))
 
         if self.apply_bc == BCType.RHS and self.bound_cond == "SOMMERFELD":
             x = g.xi[0]
@@ -382,6 +381,8 @@ def rk2(eqs: ScalarField, x, y, g: Grid2D, dt: int,flt:KreissOligerFilterO6_2D):
     nu = eqs.u.shape[0]
     up = np.empty_like(eqs.u, dtype=np.int64)
     k1 = np.empty_like(eqs.u, dtype=np.int64)
+    if eqs.apply_bc == BCType.FUNCTION:
+        eqs.apply_bcs(eqs.u, g)
     eqs.rhs(k1, eqs.u, x, y, g)
 
     #Apply KO filter for first stage
@@ -413,6 +414,8 @@ def main(parfile: str):
 
     eqs = ScalarField(2, g, params["bound_cond"])
     eqs.initialize(g, params)
+    if eqs.apply_bc == BCType.FUNCTION:
+        eqs.apply_bcs(eqs.u, g)
 
     output_dir = params["output_dir"]
     output_interval = params["output_interval"]
