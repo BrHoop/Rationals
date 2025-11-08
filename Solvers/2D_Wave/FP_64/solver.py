@@ -142,10 +142,7 @@ class KreissOligerFilterO6_2D():
             spr2 = smr2
             spr1 = smr1
             du[:,0] = sigma * (-u[:,0] + 3.0 * u[:,1] - 3.0 * u[:,2] + u[:,3]) / smr3
-            du[:,1] = (
-                sigma
-                * (3.0 * u[:,0] - 10.0 * u[:,1] + 12.0 * u[:,2] - 6.0 * u[:,3] + u[:,4])
-                / smr2
+            du[:,1] = (sigma * (3.0 * u[:,0] - 10.0 * u[:,1] + 12.0 * u[:,2] - 6.0 * u[:,3] + u[:,4]) / smr2
             )
             du[:,2] = (
                 sigma

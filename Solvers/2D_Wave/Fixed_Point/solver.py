@@ -118,7 +118,7 @@ class KreissOligerFilterO6_2D():
 
             du[:,2] = self.f.fixed_div(self.f.fixed_mul(sigma, (-3 * u[:,0] + 12 * u[:,1] - 19 * u[:,2] + 15 * u[:,3] - 6.0 * u[:,4] + u[:,5])),smr1)
 
-            du[:,-3] = self.f.fixed_div(self.f.fixed_mul(sigma, (u[:,-6] - 6 * u[:,-5] + 15 * u[:,-4] - 19 * u[:,-3] + 12 * u[:,-2] - 3 * u[:,1])),spr1)
+            du[:,-3] = self.f.fixed_div(self.f.fixed_mul(sigma, (u[:,-6] - 6 * u[:,-5] + 15 * u[:,-4] - 19 * u[:,-3] + 12 * u[:,-2] - 3 * u[:,-1])),spr1)
 
             du[:,-2] = self.f.fixed_div(self.f.fixed_mul(sigma, (u[:,-5] - 6 * u[:,-4] + 12 * u[:,-3] - 10 * u[:,-2] + 3 * u[:,-1])),spr2)
 
@@ -420,7 +420,7 @@ def main(parfile: str):
     dt = g.f.fixed_mul(g.f.to_fixed_scalar(params["cfl"]), g.dx[0])
 
     #Setup KO filter
-    flt = KreissOligerFilterO6_2D(g.dx[0], g.dx[1], sigma=params.get("ko_sigma", 0.01), f=g.f,filter_boundary=True)
+    flt = KreissOligerFilterO6_2D(g.dx[0], g.dx[1], sigma=params.get("ko_sigma", 0.01), f=g.f,filter_boundary=False)
 
     time_fixed = 0
     func_names = ["phi", "chi"]
