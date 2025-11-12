@@ -378,7 +378,6 @@ def make_rhs_fn(fp, grad_x, grad_y, grad_xx, grad_yy, inv_rsq_eps, sommerfeld_fn
 
         phi_float = fp.from_fixed_array(phi)
         nonlinear = jnp.sin(2.0 * phi_float) * inv_rsq_eps
-        # nonlinear = 0
         dtchi = dxxphi + dyyphi - fp.float_to_fixed(nonlinear)
 
         if apply_sommerfeld:
