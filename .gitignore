@@ -22,5 +22,6 @@
 jax_env/
 __pycache__/
 *.h5
+.vscode/
 # profile
 /profiles/*
