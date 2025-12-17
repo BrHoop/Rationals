@@ -10,7 +10,6 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-             "args":  ["${workspaceFolder}\\Solvers\\2D_Wave\\Fixed_Point\\params.toml"]
         }
     ]
 }

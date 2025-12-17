@@ -18,6 +18,9 @@
 *.tif
 *.tiff
 *.svg
-
+.venv/
+jax_env/
+__pycache__/
+*.h5
 # profile
 /profiles/*

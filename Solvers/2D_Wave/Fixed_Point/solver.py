@@ -2,6 +2,7 @@ import math
 import os
 import sys
 import tomllib
+from pathlib import Path
 
 from numba import njit
 
@@ -22,7 +23,7 @@ from utils.fixed_point import fixed_point
 from utils.grid import Grid
 from utils.types import BCType, FilterApply, FilterType
 
-
+project_root = Path.cwd()
 
 class KreissOligerFilterO6_2D():
     """
@@ -404,7 +405,7 @@ def rk2(eqs: ScalarField, x, y, g: Grid2D, dt: int,flt:KreissOligerFilterO6_2D):
         eqs.apply_bcs(eqs.u, g)
 
 
-def main(parfile: str):
+def main(parfile: str, output_dir:str):
     with open(parfile, "rb") as f:
         params = tomllib.load(f)
 
@@ -417,9 +418,8 @@ def main(parfile: str):
     if eqs.apply_bc == BCType.FUNCTION:
         eqs.apply_bcs(eqs.u, g)
 
-    output_dir = params["output_dir"]
     output_interval = params["output_interval"]
-    os.makedirs(output_dir, exist_ok=True)
+
     dt = g.f.fixed_mul(g.f.to_fixed_scalar(params["cfl"]), g.dx[0])
 
     #Setup KO filter
@@ -455,7 +455,16 @@ def main(parfile: str):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage:  python JaxSolver.py <parfile>")
-        sys.exit(1)
-    main(sys.argv[1])
+    if len(sys.argv) > 1:
+        parfile = sys.argv[1]
+    else:
+        parfile = (project_root / "Solvers/2D_Wave/Fixed_Point/params.toml").as_posix()
+
+    if len(sys.argv) > 2:
+        output_dir = Path(sys.argv[2])
+    else:
+        output_dir = (project_root / "Solvers/2D_Wave/Fixed_Point/data").as_posix()
+
+    os.makedirs(output_dir, exist_ok=True)
+
+    main(parfile,output_dir)

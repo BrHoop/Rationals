@@ -1,0 +1,22 @@
+<?xml version="1.0" ?>
+<Xdmf Version="3.0" xmlns:xi="http://www.w3.org/2001/XInclude">
+  <Domain>
+    <Grid Name="TimeSeries" GridType="Collection" CollectionType="Temporal">
+      <Grid Name="wave_0" GridType="Uniform">
+        <Time Value="0.0"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 1601 1601"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="1601" NumberType="Float" Precision="8" Format="HDF">wave_00000.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="1601" NumberType="Float" Precision="8" Format="HDF">wave_00000.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00000.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 1601 1601" NumberType="Float" Precision="8" Format="HDF">wave_00000.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 1601 1601" NumberType="Float" Precision="8" Format="HDF">wave_00000.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+    </Grid>
+  </Domain>
+</Xdmf>

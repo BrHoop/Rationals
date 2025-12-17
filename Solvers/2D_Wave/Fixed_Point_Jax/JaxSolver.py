@@ -1,6 +1,7 @@
 import os
 import sys
 import tomllib
+from pathlib import Path
 
 from types import SimpleNamespace
 
@@ -18,6 +19,7 @@ from utils.grid import Grid  # noqa: E402
 from utils.types import BCType  # noqa: E402
 from utils.fixed_point import fixed_point  # noqa: E402
 
+project_root = Path.cwd()
 
 def make_fixed_point_ops(frac_bits: int) -> SimpleNamespace:
     """
@@ -561,7 +563,7 @@ class ScalarField(Equations):
         return self._apply_bc_fn(u)
 
 
-def main(parfile: str):
+def main(parfile: str, output_dir:str):
     with open(parfile, "rb") as f:
         params = tomllib.load(f)
 
@@ -576,9 +578,7 @@ def main(parfile: str):
     filter_fn = make_filter_fn(eqs.fp, g.dx[0], g.dx[1], sigma_fixed, filter_boundary=True)
     step_fn = make_rk2_step(eqs.fp, eqs.rhs, filter_fn, dt_fixed, eqs._apply_bc_fn)
 
-    output_dir = params["output_dir"]
     output_interval = params["output_interval"]
-    os.makedirs(output_dir, exist_ok=True)
 
     func_names = ["phi", "chi"]
     x_float = np.asarray(eqs.x_float)
@@ -611,7 +611,16 @@ def main(parfile: str):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: python JaxSolver.py <parfile>")
-        sys.exit(1)
-    main(sys.argv[1])
+    if len(sys.argv) > 1:
+        parfile = sys.argv[1]
+    else:
+        parfile = (project_root / "Solvers/2D_Wave/Fixed_Point_Jax/params.toml").as_posix()
+
+    if len(sys.argv) > 2:
+        output_dir = Path(sys.argv[2])
+    else:
+        output_dir = (project_root / "Solvers/2D_Wave/Fixed_Point_Jax/data").as_posix()
+
+    os.makedirs(output_dir, exist_ok=True)
+
+    main(parfile,output_dir)

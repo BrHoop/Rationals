@@ -1,6 +1,7 @@
 import os
 import sys
 import tomllib
+from pathlib import Path
 
 import numpy as np
 import jax
@@ -15,6 +16,7 @@ from utils.eqs import Equations
 from utils.grid import Grid
 from utils.types import BCType
 
+project_root = Path.cwd()
 
 def grad_x(u: jnp.ndarray, dx: float) -> jnp.ndarray:
     idx_by_2 = 0.5 / dx
@@ -394,7 +396,7 @@ class ScalarField(Equations):
         return self._apply_bc_fn(u)
 
 
-def main(parfile: str):
+def main(parfile: str, output_dir: str):
     with open(parfile, "rb") as f:
         params = tomllib.load(f)
 
@@ -407,9 +409,7 @@ def main(parfile: str):
     filter_fn = make_filter_fn(eqs.dx, eqs.dy, sigma, False)
     step_fn = make_rk2_step(eqs.rhs, filter_fn, dt, eqs._apply_bc_fn)
 
-    output_dir = params["output_dir"]
     output_interval = params["output_interval"]
-    os.makedirs(output_dir, exist_ok=True)
 
     func_names = ["phi", "chi"]
 
@@ -432,7 +432,16 @@ def main(parfile: str):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: python JaxSolver.py <parfile>")
-        sys.exit(1)
-    main(sys.argv[1])
+    if len(sys.argv) > 1:
+        parfile = sys.argv[1]
+    else:
+        parfile = (project_root / "Solvers/2D_Wave/FP_64_Jax/params.toml").as_posix()
+
+    if len(sys.argv) > 2:
+        output_dir = Path(sys.argv[2])
+    else:
+        output_dir = (project_root / "Solvers/2D_Wave/FP_64_Jax/data").as_posix()
+
+    os.makedirs(output_dir, exist_ok=True)
+
+    main(parfile,output_dir)

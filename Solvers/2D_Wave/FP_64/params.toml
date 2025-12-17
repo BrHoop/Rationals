@@ -1,4 +1,4 @@
-Nt = 6400
+Nt = 500
 Nx = 401
 Ny = 401
 Xmin = -50.0
@@ -16,5 +16,4 @@ id_sigma = 1.0
 id_amp = 1
 bound_cond = "SOMMERFELD"
 
-output_dir = "output_sowave"
 output_interval = 5

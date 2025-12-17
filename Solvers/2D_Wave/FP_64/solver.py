@@ -1,6 +1,7 @@
 import os
 import sys
 import tomllib
+from pathlib import Path
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
 import utils.ioxdmf as iox
@@ -12,6 +13,7 @@ from utils.sowave import ScalarField
 import numpy as np
 from utils.types import BCType, FilterApply, FilterType
 
+project_root = Path.cwd()
 
 class KreissOligerFilterO6_2D():
     """
@@ -311,7 +313,7 @@ class ScalarField(Equations):
         dxxphi = grad_xx(phi,g)
         dyyphi = grad_yy(phi,g)
         X, Y = np.meshgrid(x, y, indexing="ij")
-        dtchi[:] = dxxphi[:] + dyyphi[:] - np.sin(2*phi)/(X**2+Y**2+1e-5)
+        dtchi[:] = dxxphi[:] + dyyphi[:] - np.sin(2*phi)/(X**2+Y**2+1e-12)
 
         if self.apply_bc == BCType.RHS and self.bound_cond == "SOMMERFELD":
                 # Sommerfeld boundary conditions
@@ -400,7 +402,7 @@ def rk2(eqs, g, dt, x, y, fltr):
         eqs.apply_bcs(eqs.u, g)
 
 
-def main(parfile):
+def main(parfile: str, output_dir: str):
 
     #Read the parfile
     with open(parfile,"rb") as f:
@@ -416,9 +418,7 @@ def main(parfile):
     if eqs.apply_bc == BCType.FUNCTION:
         eqs.apply_bcs(eqs.u, g)
 
-    output_dir = params["output_dir"]
     output_interval = params["output_interval"]
-    os.makedirs(output_dir, exist_ok=True)
 
     dt = params["cfl"] * dx
 
@@ -441,8 +441,16 @@ def main(parfile):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage:  python solver.py <parfile>")
-        sys.exit(1)
-    parfile = sys.argv[1]
-    main(parfile)
+    if len(sys.argv) > 1:
+        parfile = sys.argv[1]
+    else:
+        parfile = (project_root / "Solvers/2D_Wave/FP_64/params.toml").as_posix()
+
+    if len(sys.argv) > 2:
+        output_dir = Path(sys.argv[2])
+    else:
+        output_dir = (project_root / "Solvers/2D_Wave/FP_64/data").as_posix()
+
+    os.makedirs(output_dir, exist_ok=True)
+
+    main(parfile,output_dir)

@@ -1,4 +1,4 @@
-Nt = 12800
+Nt = 500
 Nx = 401
 Ny = 401
 Xmin = -5.0
@@ -14,7 +14,6 @@ id_sigma = 1.0
 id_amp = 1.0
 bound_cond = "REFLECT"
 
-output_dir = "output_sowave"
 output_interval = 5
 
 frac_bits = 20
