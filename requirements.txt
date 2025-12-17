@@ -1,0 +1,10 @@
+ipykernel
+ipywidgets
+jax
+jaxlib
+matplotlib
+notebook
+numpy
+tensorflow
+xprof
+tensorboard

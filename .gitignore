@@ -1,0 +1,27 @@
+# Generated data outputs
+*.csv
+*.tsv
+*.json
+*.npy
+*.npz
+*.pkl
+*.h5
+*.curve
+.idea/*
+.DS*
+# Generated images/photos
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+*.tif
+*.tiff
+*.svg
+.venv/
+jax_env/
+__pycache__/
+*.h5
+.vscode/
+# profile
+/profiles/*

@@ -1,0 +1,1522 @@
+<?xml version="1.0" ?>
+<Xdmf Version="3.0" xmlns:xi="http://www.w3.org/2001/XInclude">
+  <Domain>
+    <Grid Name="TimeSeries" GridType="Collection" CollectionType="Temporal">
+      <Grid Name="wave_0" GridType="Uniform">
+        <Time Value="0.0"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00000.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00000.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00000.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00000.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00000.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_5" GridType="Uniform">
+        <Time Value="0.125"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00005.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00005.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00005.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00005.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00005.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_10" GridType="Uniform">
+        <Time Value="0.25"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00010.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00010.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00010.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00010.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00010.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_15" GridType="Uniform">
+        <Time Value="0.375"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00015.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00015.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00015.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00015.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00015.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_20" GridType="Uniform">
+        <Time Value="0.5"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00020.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00020.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00020.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00020.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00020.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_25" GridType="Uniform">
+        <Time Value="0.625"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00025.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00025.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00025.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00025.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00025.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_30" GridType="Uniform">
+        <Time Value="0.75"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00030.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00030.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00030.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00030.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00030.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_35" GridType="Uniform">
+        <Time Value="0.875"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00035.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00035.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00035.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00035.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00035.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_40" GridType="Uniform">
+        <Time Value="1.0"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00040.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00040.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00040.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00040.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00040.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_45" GridType="Uniform">
+        <Time Value="1.125"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00045.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00045.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00045.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00045.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00045.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_50" GridType="Uniform">
+        <Time Value="1.25"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00050.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00050.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00050.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00050.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00050.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_55" GridType="Uniform">
+        <Time Value="1.375"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00055.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00055.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00055.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00055.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00055.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_60" GridType="Uniform">
+        <Time Value="1.5"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00060.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00060.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00060.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00060.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00060.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_65" GridType="Uniform">
+        <Time Value="1.625"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00065.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00065.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00065.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00065.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00065.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_70" GridType="Uniform">
+        <Time Value="1.75"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00070.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00070.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00070.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00070.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00070.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_75" GridType="Uniform">
+        <Time Value="1.875"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00075.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00075.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00075.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00075.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00075.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_80" GridType="Uniform">
+        <Time Value="2.0"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00080.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00080.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00080.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00080.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00080.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_85" GridType="Uniform">
+        <Time Value="2.125"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00085.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00085.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00085.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00085.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00085.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_90" GridType="Uniform">
+        <Time Value="2.25"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00090.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00090.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00090.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00090.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00090.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_95" GridType="Uniform">
+        <Time Value="2.375"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00095.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00095.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00095.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00095.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00095.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_100" GridType="Uniform">
+        <Time Value="2.5"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00100.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00100.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00100.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00100.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00100.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_105" GridType="Uniform">
+        <Time Value="2.625"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00105.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00105.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00105.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00105.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00105.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_110" GridType="Uniform">
+        <Time Value="2.75"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00110.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00110.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00110.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00110.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00110.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_115" GridType="Uniform">
+        <Time Value="2.875"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00115.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00115.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00115.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00115.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00115.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_120" GridType="Uniform">
+        <Time Value="3.0"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00120.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00120.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00120.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00120.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00120.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_125" GridType="Uniform">
+        <Time Value="3.125"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00125.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00125.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00125.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00125.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00125.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_130" GridType="Uniform">
+        <Time Value="3.25"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00130.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00130.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00130.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00130.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00130.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_135" GridType="Uniform">
+        <Time Value="3.375"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00135.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00135.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00135.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00135.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00135.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_140" GridType="Uniform">
+        <Time Value="3.5"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00140.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00140.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00140.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00140.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00140.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_145" GridType="Uniform">
+        <Time Value="3.625"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00145.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00145.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00145.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00145.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00145.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_150" GridType="Uniform">
+        <Time Value="3.75"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00150.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00150.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00150.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00150.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00150.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_155" GridType="Uniform">
+        <Time Value="3.875"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00155.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00155.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00155.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00155.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00155.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_160" GridType="Uniform">
+        <Time Value="4.0"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00160.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00160.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00160.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00160.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00160.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_165" GridType="Uniform">
+        <Time Value="4.125"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00165.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00165.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00165.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00165.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00165.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_170" GridType="Uniform">
+        <Time Value="4.25"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00170.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00170.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00170.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00170.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00170.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_175" GridType="Uniform">
+        <Time Value="4.375"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00175.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00175.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00175.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00175.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00175.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_180" GridType="Uniform">
+        <Time Value="4.5"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00180.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00180.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00180.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00180.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00180.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_185" GridType="Uniform">
+        <Time Value="4.625"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00185.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00185.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00185.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00185.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00185.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_190" GridType="Uniform">
+        <Time Value="4.75"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00190.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00190.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00190.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00190.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00190.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_195" GridType="Uniform">
+        <Time Value="4.875"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00195.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00195.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00195.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00195.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00195.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_200" GridType="Uniform">
+        <Time Value="5.0"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00200.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00200.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00200.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00200.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00200.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_205" GridType="Uniform">
+        <Time Value="5.125"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00205.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00205.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00205.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00205.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00205.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_210" GridType="Uniform">
+        <Time Value="5.25"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00210.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00210.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00210.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00210.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00210.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_215" GridType="Uniform">
+        <Time Value="5.375"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00215.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00215.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00215.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00215.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00215.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_220" GridType="Uniform">
+        <Time Value="5.5"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00220.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00220.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00220.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00220.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00220.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_225" GridType="Uniform">
+        <Time Value="5.625"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00225.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00225.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00225.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00225.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00225.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_230" GridType="Uniform">
+        <Time Value="5.75"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00230.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00230.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00230.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00230.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00230.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_235" GridType="Uniform">
+        <Time Value="5.875"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00235.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00235.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00235.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00235.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00235.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_240" GridType="Uniform">
+        <Time Value="6.0"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00240.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00240.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00240.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00240.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00240.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_245" GridType="Uniform">
+        <Time Value="6.125"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00245.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00245.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00245.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00245.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00245.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_250" GridType="Uniform">
+        <Time Value="6.25"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00250.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00250.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00250.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00250.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00250.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_255" GridType="Uniform">
+        <Time Value="6.375"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00255.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00255.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00255.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00255.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00255.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_260" GridType="Uniform">
+        <Time Value="6.5"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00260.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00260.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00260.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00260.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00260.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_265" GridType="Uniform">
+        <Time Value="6.625"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00265.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00265.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00265.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00265.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00265.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_270" GridType="Uniform">
+        <Time Value="6.75"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00270.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00270.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00270.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00270.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00270.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_275" GridType="Uniform">
+        <Time Value="6.875"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00275.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00275.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00275.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00275.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00275.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_280" GridType="Uniform">
+        <Time Value="7.0"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00280.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00280.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00280.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00280.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00280.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_285" GridType="Uniform">
+        <Time Value="7.125"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00285.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00285.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00285.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00285.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00285.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_290" GridType="Uniform">
+        <Time Value="7.25"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00290.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00290.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00290.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00290.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00290.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_295" GridType="Uniform">
+        <Time Value="7.375"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00295.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00295.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00295.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00295.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00295.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_300" GridType="Uniform">
+        <Time Value="7.5"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00300.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00300.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00300.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00300.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00300.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_305" GridType="Uniform">
+        <Time Value="7.625"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00305.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00305.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00305.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00305.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00305.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_310" GridType="Uniform">
+        <Time Value="7.75"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00310.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00310.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00310.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00310.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00310.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_315" GridType="Uniform">
+        <Time Value="7.875"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00315.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00315.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00315.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00315.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00315.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_320" GridType="Uniform">
+        <Time Value="8.0"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00320.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00320.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00320.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00320.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00320.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_325" GridType="Uniform">
+        <Time Value="8.125"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00325.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00325.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00325.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00325.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00325.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_330" GridType="Uniform">
+        <Time Value="8.25"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00330.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00330.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00330.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00330.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00330.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_335" GridType="Uniform">
+        <Time Value="8.375"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00335.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00335.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00335.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00335.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00335.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_340" GridType="Uniform">
+        <Time Value="8.5"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00340.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00340.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00340.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00340.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00340.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_345" GridType="Uniform">
+        <Time Value="8.625"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00345.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00345.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00345.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00345.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00345.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_350" GridType="Uniform">
+        <Time Value="8.75"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00350.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00350.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00350.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00350.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00350.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_355" GridType="Uniform">
+        <Time Value="8.875"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00355.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00355.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00355.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00355.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00355.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_360" GridType="Uniform">
+        <Time Value="9.0"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00360.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00360.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00360.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00360.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00360.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_365" GridType="Uniform">
+        <Time Value="9.125"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00365.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00365.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00365.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00365.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00365.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_370" GridType="Uniform">
+        <Time Value="9.25"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00370.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00370.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00370.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00370.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00370.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_375" GridType="Uniform">
+        <Time Value="9.375"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00375.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00375.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00375.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00375.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00375.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_380" GridType="Uniform">
+        <Time Value="9.5"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00380.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00380.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00380.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00380.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00380.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_385" GridType="Uniform">
+        <Time Value="9.625"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00385.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00385.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00385.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00385.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00385.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_390" GridType="Uniform">
+        <Time Value="9.75"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00390.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00390.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00390.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00390.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00390.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_395" GridType="Uniform">
+        <Time Value="9.875"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00395.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00395.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00395.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00395.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00395.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_400" GridType="Uniform">
+        <Time Value="10.0"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00400.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00400.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00400.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00400.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00400.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_405" GridType="Uniform">
+        <Time Value="10.125"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00405.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00405.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00405.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00405.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00405.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_410" GridType="Uniform">
+        <Time Value="10.25"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00410.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00410.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00410.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00410.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00410.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_415" GridType="Uniform">
+        <Time Value="10.375"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00415.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00415.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00415.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00415.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00415.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_420" GridType="Uniform">
+        <Time Value="10.5"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00420.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00420.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00420.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00420.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00420.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_425" GridType="Uniform">
+        <Time Value="10.625"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00425.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00425.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00425.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00425.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00425.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_430" GridType="Uniform">
+        <Time Value="10.75"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00430.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00430.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00430.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00430.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00430.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_435" GridType="Uniform">
+        <Time Value="10.875"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00435.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00435.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00435.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00435.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00435.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_440" GridType="Uniform">
+        <Time Value="11.0"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00440.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00440.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00440.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00440.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00440.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_445" GridType="Uniform">
+        <Time Value="11.125"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00445.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00445.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00445.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00445.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00445.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_450" GridType="Uniform">
+        <Time Value="11.25"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00450.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00450.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00450.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00450.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00450.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_455" GridType="Uniform">
+        <Time Value="11.375"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00455.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00455.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00455.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00455.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00455.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_460" GridType="Uniform">
+        <Time Value="11.5"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00460.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00460.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00460.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00460.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00460.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_465" GridType="Uniform">
+        <Time Value="11.625"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00465.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00465.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00465.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00465.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00465.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_470" GridType="Uniform">
+        <Time Value="11.75"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00470.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00470.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00470.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00470.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00470.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_475" GridType="Uniform">
+        <Time Value="11.875"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00475.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00475.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00475.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00475.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00475.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_480" GridType="Uniform">
+        <Time Value="12.0"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00480.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00480.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00480.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00480.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00480.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_485" GridType="Uniform">
+        <Time Value="12.125"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00485.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00485.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00485.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00485.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00485.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_490" GridType="Uniform">
+        <Time Value="12.25"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00490.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00490.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00490.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00490.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00490.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_495" GridType="Uniform">
+        <Time Value="12.375"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00495.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00495.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00495.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00495.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00495.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid Name="wave_500" GridType="Uniform">
+        <Time Value="12.5"/>
+        <Topology TopologyType="3DRectMesh" Dimensions="1 401 401"/>
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem Name="X" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00500.h5:/X</DataItem>
+          <DataItem Name="Y" Dimensions="401" NumberType="Float" Precision="8" Format="HDF">wave_00500.h5:/Y</DataItem>
+          <DataItem Name="Z" Dimensions="1" NumberType="Float" Precision="8" Format="HDF">wave_00500.h5:/Z</DataItem>
+        </Geometry>
+        <Attribute Name="phi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00500.h5:/phi</DataItem>
+        </Attribute>
+        <Attribute Name="chi" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="1 401 401" NumberType="Float" Precision="8" Format="HDF">wave_00500.h5:/chi</DataItem>
+        </Attribute>
+      </Grid>
+    </Grid>
+  </Domain>
+</Xdmf>

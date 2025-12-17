@@ -1,0 +1,14 @@
+
+nt = 4000
+nx = 201
+
+cfl = 0.25
+x_min = -1.0
+x_max = 1.0
+
+output_frequency = 10
+
+# define the initial data
+id_x0 = 0.0
+id_amp = 2.0
+id_omega = 30.0
