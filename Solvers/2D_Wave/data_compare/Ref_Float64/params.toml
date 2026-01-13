@@ -1,0 +1,14 @@
+Nx = 128
+Ny = 128
+Xmin = -5.0
+Xmax = 5.0
+Ymin = -5.0
+Ymax = 5.0
+Nt = 1000
+output_interval = 20
+cfl = 0.05
+id_x0 = 0.0
+id_y0 = 0.0
+id_sigma = 0.5
+id_amp = 1.0
+ko_sigma = 0.05

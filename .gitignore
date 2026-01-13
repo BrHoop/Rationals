@@ -1,0 +1,37 @@
+# --- Virtual Environments ---
+# Ignores the folder causing your current error
+.venv/
+venv/
+env/
+ENV/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+
+# --- Simulation Data & Outputs ---
+# Prevent committing large simulation results
+*.h5
+*.xmf
+*.xdmf
+*.csv
+*.npy
+*.npz
+
+# Ignore specific output folders
+data/
+output/
+**/data/
+**/output/
+temp/
+tmp/
+
+# --- IDE & Editors ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- Jupyter Notebooks ---
+.ipynb_checkpoints/

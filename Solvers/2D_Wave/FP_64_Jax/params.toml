@@ -1,0 +1,19 @@
+Nt = 1000
+Nx = 200
+Ny = 200
+Xmin = -5
+Xmax = 5
+Ymin = -5
+Ymax = 5
+
+cfl = 0.1
+
+
+
+id_x0 = 1
+id_y0 = 1
+id_sigma = 1.0
+id_amp = 1
+bound_cond = "REFLECT"
+
+output_interval = 5
