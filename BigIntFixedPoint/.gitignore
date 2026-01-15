@@ -1,0 +1,14 @@
+# Python build artifacts
+*.egg-info/
+build/
+dist/
+dependency_links.txt
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Jupyter Notebooks
+.ipynb_checkpoints/

@@ -1,4 +1,5 @@
 import builtins
+from typing import Tuple
 import numpy as np
 import jax.numpy as jnp
 import jax.tree_util
