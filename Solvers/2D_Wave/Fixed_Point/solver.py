@@ -11,7 +11,6 @@ sys.path.insert(
     os.path.abspath(
         os.path.join(
             os.path.dirname(__file__),'../../..'
-            #"/Users/isaacsudweeks/Library/CloudStorage/OneDrive-BrighamYoungUniversity/Personal Projects/Rationals",
         )
     ),
 )
