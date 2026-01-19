@@ -9,18 +9,20 @@ divmod = builtins.divmod
 
 
 class BigIntTensor:
-    def __init__(self, tensor: jnp.ndarray):
+    def __init__(self, tensor: jnp.ndarray, frac_bits: int = 0):
         """
         Initialize with a JAX array of shape [..., L].
         Dimension -1 is treated as the limbs (LSB at index 0).
+        frac_bits: Number of bits representing the fractional part.
         """
         self.tensor = tensor
         self.dtype = tensor.dtype
         self.shape = tensor.shape
         self.L = tensor.shape[-1]
+        self.frac_bits = frac_bits
 
     def __repr__(self):
-        return f"BigIntTensor(shape={self.shape}, limbs={self.L}, dtype={self.dtype})"
+        return f"BigIntTensor(shape={self.shape}, limbs={self.L}, dtype={self.dtype}, frac_bits={self.frac_bits})"
 
     def _pad_to_match(self, other: 'BigIntTensor') -> Tuple[jnp.ndarray, jnp.ndarray]:
         """
@@ -50,24 +52,120 @@ class BigIntTensor:
 
     def __add__(self, other):
         if not isinstance(other, BigIntTensor): return NotImplemented
+        if self.frac_bits != other.frac_bits:
+            raise ValueError(f"frac_bits mismatch: {self.frac_bits} vs {other.frac_bits}")
         a, b = self._pad_to_match(other)
-        return BigIntTensor(add_jit(a, b))
+        return BigIntTensor(add_jit(a, b), frac_bits=self.frac_bits)
 
     def __sub__(self, other):
         if not isinstance(other, BigIntTensor): return NotImplemented
+        if self.frac_bits != other.frac_bits:
+            raise ValueError(f"frac_bits mismatch: {self.frac_bits} vs {other.frac_bits}")
         a, b = self._pad_to_match(other)
-        return BigIntTensor(sub_jit(a, b))
+        return BigIntTensor(sub_jit(a, b), frac_bits=self.frac_bits)
 
     def __mul__(self, other):
         if not isinstance(other, BigIntTensor): return NotImplemented
         a, b = self._pad_to_match(other)
-        return BigIntTensor(mul_jit(a, b))
+        
+        # Raw multiplication (returns 2*L limbs)
+        res = mul_jit(a, b)
+        
+        # Calculate new frac_bits
+        # Standard fixed point: A(f1) * B(f2) -> C(f1+f2)
+        total_frac = self.frac_bits + other.frac_bits
+        
+        # Determine target frac bits. 
+        # If both are fixed point (frac_bits > 0), we likely want to maintain the specific precision
+        # implied by the factory settings (e.g. all tensors sharing same scale).
+        # We assume the target is `max(self.frac_bits, other.frac_bits)`.
+        target_frac = max(self.frac_bits, other.frac_bits)
+        
+        if total_frac == 0:
+            return BigIntTensor(res, frac_bits=0)
+            
+        # If we need to shift back
+        shift_amount = total_frac - target_frac
+        
+        if shift_amount > 0:
+            # Shift right by shift_amount.
+            # We assume shift_amount is small enough to generally fit (it definitely fits in the expanded 2L).
+            # We implementation shift via division: res_shifted = res // (1 << shift_amount)
+            
+            # Construct divisor (1 << shift_amount) as a BigIntTensor
+            # We need to construct it compatible with 'res' which has shape [..., 2L]
+            # but divmod expects [..., K] matching or broadcastable.
+            
+            # Create a scalar integer tensor representing the divisor
+            # We use a helper utility. Since we can't import factory, we do it manually or use jax keys
+            # Actually, we can use the `kernels.convert_int_vec` if we import it, or just implement specific logic.
+            # But simpler: create a numpy array of limbs and convert to jax.
+            
+            # Find number of limbs needed for the divisor. 2L should be enough.
+            current_L = res.shape[-1]
+            limb_bits = self.dtype.itemsize * 8
+            
+            # Create divisor limbs
+            divisor_val = 1 << shift_amount
+            
+            # Convert divisor_val to limbs
+            # We can use a small local helper
+            def val_to_limbs(v, n_limbs, dtype):
+                mask = (1 << limb_bits) - 1
+                out = []
+                for _ in range(n_limbs):
+                    out.append(v & mask)
+                    v >>= limb_bits
+                return np.array(out, dtype=dtype)
+                
+            div_arr = val_to_limbs(divisor_val, current_L, self.dtype)
+            div_tensor = jnp.array(div_arr) # Shape (2L,)
+            
+            # Expand dims to match batch if necessary? 
+            # divmod_jit broadcasting should handle (2L,) vs (N, 2L)
+            
+            # Perform division
+            # res is tensor, div_tensor is tensor
+            # divmod_jit expects arrays
+            q, _ = divmod_jit(res, div_tensor)
+            
+            # Truncate back to L?
+            # Usually fixed point keeps L same as inputs if intended.
+            # mul_jit expanded to 2L. 
+            # If we want to return a result compatible with inputs, we should slice to L.
+            # But if inputs had different L, we padded to max(L).
+            output_L = max(self.L, other.L)
+            
+            # Take the lower output_L limbs of the quotient
+            q_trunc = q[..., :output_L]
+            
+            return BigIntTensor(q_trunc, frac_bits=target_frac)
+        else:
+            # No shift needed (e.g. target is sum of fracs? Unlikely for fixed point).
+            # If shift_amount == 0, we just return res (2L) or truncate?
+            # If we don't truncate, the tensor grows with every mul. 
+            # For fixed point, we usually truncate.
+            output_L = max(self.L, other.L)
+            return BigIntTensor(res[..., :output_L], frac_bits=target_frac)
 
     def __divmod__(self, other):
         if not isinstance(other, BigIntTensor): return NotImplemented
         a, b = self._pad_to_match(other)
+        # TODO: Fixed point division logic if needed. 
+        # For now, treat as integer division on the underlying representation.
+        # Note: Fixed point division (A/B) usually requires pre-shifting A: (A << f) / B.
+        
+        if self.frac_bits > 0 or other.frac_bits > 0:
+             # If fixed point, we assume (A * 2^f) / (B * 2^f) = A/B (scalar). 
+             # Result is integer? No, result should be fixed point implies we want A/B * 2^f.
+             # So we must compute (A * 2^{2f}) / (B * 2^f) = (A/B) * 2^f.
+             # So we need to shift A left by 'frac_bits'.
+             pass # Leaving as simple integer div for now unless requested.
+             
         q, r = divmod_jit(a, b)
-        return BigIntTensor(q), BigIntTensor(r)
+        return BigIntTensor(q, frac_bits=0), BigIntTensor(r, frac_bits=0) 
+        # Result of integer div is integer (frac=0)? Or does it preserve scale?
+        # Let's keep it simple: Raw divmod returns integer result.
 
     def __floordiv__(self, other):
         q, _ = divmod(self, other)
@@ -79,7 +177,7 @@ class BigIntTensor:
 
     def __neg__(self):
         # 0 - self
-        return BigIntTensor(sub_jit(jnp.zeros_like(self.tensor), self.tensor))
+        return BigIntTensor(sub_jit(jnp.zeros_like(self.tensor), self.tensor), frac_bits=self.frac_bits)
 
     # --- Indexing and Splicing ---
 
@@ -96,7 +194,7 @@ class BigIntTensor:
         if ret.ndim == 0:
             raise IndexError("Slicing reduced rank to 0. Cannot access internal limbs directly.")
 
-        return BigIntTensor(ret)
+        return BigIntTensor(ret, frac_bits=self.frac_bits)
 
     @property
     def at(self):
@@ -124,6 +222,11 @@ class BigIntTensor:
         # Flatten batch dims to iterate
         flat = arr.reshape(-1, arr.shape[-1])
         ints = [vec_to_int(row) for row in flat]
+        
+        # Apply Fixed Point scaling
+        if self.frac_bits > 0:
+            scale = 2.0 ** self.frac_bits
+            ints = [x / scale for x in ints]
 
         # Restore batch shape (excluding limb dim)
         if len(self.shape) > 1:
