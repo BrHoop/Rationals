@@ -262,8 +262,8 @@ def make_rhs_fn(fp, grad_xx, grad_yy, inv_rsq_eps):
         dxxphi = grad_xx(phi)
         dyyphi = grad_yy(phi)
         
-        phi_float = phi.numpy() # WARNING: .numpy() inside JIT is usually bad or returns Tracers
         # We need a pure JAX to_float converter for speed and correctness inside JIT
+
         
         # Correct JAX to_float:
         scale = 2.0 ** fp.frac_bits
