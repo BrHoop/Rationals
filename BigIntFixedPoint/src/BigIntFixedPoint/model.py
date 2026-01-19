@@ -285,4 +285,4 @@ class _BigIntAtItem:
 
         # 3. Apply Update via JAX
         new_tensor = self.parent.tensor.at[self.key].set(v_t)
-        return BigIntTensor(new_tensor)
+        return BigIntTensor(new_tensor, frac_bits=self.parent.frac_bits)
