@@ -239,10 +239,10 @@ class BigIntTensor:
 def _flatten_bigint(obj):
     # Return (children, aux_data)
     # Children must be JAX arrays or other Pytrees.
-    return (obj.tensor,), None
+    return (obj.tensor,), obj.frac_bits
 
 def _unflatten_bigint(aux, children):
-    return BigIntTensor(children[0])
+    return BigIntTensor(children[0], frac_bits=aux)
 
 jax.tree_util.register_pytree_node(BigIntTensor, _flatten_bigint, _unflatten_bigint)
 
