@@ -7,6 +7,6 @@ matplotlib
 notebook
 numpy
 tensorflow
-triton==2.1.0
+triton==2.2.0
 xprof
 tensorboard
