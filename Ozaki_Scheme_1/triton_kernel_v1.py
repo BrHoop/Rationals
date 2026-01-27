@@ -1,5 +1,6 @@
 import jax
 import jax.numpy as jnp
+import warnings
 try:
     import triton
     import triton.language as tl
@@ -82,6 +83,10 @@ def triton_matmul(A: jax.Array, B: jax.Array) -> jax.Array:
             BLOCK_SIZE_N=BLOCK_SIZE_N,
             BLOCK_SIZE_K=BLOCK_SIZE_K
         )
-    except Exception:
+    except Exception as exc:
+        warnings.warn(
+            f"Triton matmul failed; falling back to JAX. Reason: {exc}",
+            RuntimeWarning,
+        )
         # Fallback to JAX native if Triton is missing or fails
         return jnp.matmul(A, B)
