@@ -88,7 +88,7 @@ def triton_modular_matmul(A: jax.Array, B: jax.Array, modulus: int) -> jax.Array
             BLOCK_SIZE_N=BLOCK_SIZE_N,
             BLOCK_SIZE_K=BLOCK_SIZE_K
         )
-    except (ImportError, NameError, RuntimeError):
+    except Exception:
         # Fallback to JAX native if Triton is missing
         # (A @ B) % modulus
         # Warning: A @ B might overflow int64 if not careful

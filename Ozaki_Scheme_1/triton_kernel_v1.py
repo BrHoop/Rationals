@@ -82,6 +82,6 @@ def triton_matmul(A: jax.Array, B: jax.Array) -> jax.Array:
             BLOCK_SIZE_N=BLOCK_SIZE_N,
             BLOCK_SIZE_K=BLOCK_SIZE_K
         )
-    except (ImportError, NameError, RuntimeError):
+    except Exception:
         # Fallback to JAX native if Triton is missing or fails
         return jnp.matmul(A, B)
