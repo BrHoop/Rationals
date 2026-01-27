@@ -2,9 +2,11 @@ ipykernel
 ipywidgets
 jax
 jaxlib
+jax-triton==0.3.0
 matplotlib
 notebook
 numpy
 tensorflow
+triton==2.1.0
 xprof
 tensorboard
