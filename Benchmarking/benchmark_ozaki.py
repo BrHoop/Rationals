@@ -80,13 +80,13 @@ def construct_fd_matrix(N, coeffs):
     D_dense = np.stack([np.roll(expanded, i) for i in range(N)], axis=0)
     return jnp.array(D_dense)
 
-def convolve_periodic(u, coeffs):
-    n = u.shape[0]
+def apply_stencil_periodic(u, coeffs):
     center = len(coeffs) // 2
-    kernel = jnp.zeros(n, dtype=u.dtype)
+    out = jnp.zeros_like(u)
     for i, c in enumerate(coeffs):
-        kernel = kernel.at[(i - center) % n].set(c)
-    return jnp.fft.ifft(jnp.fft.fft(u) * jnp.fft.fft(kernel)).real
+        shift = i - center
+        out = out + c * jnp.roll(u, shift)
+    return out
 
 def run_benchmark():
     orders = [2, 4, 8, 16] # Testing specific orders
@@ -133,23 +133,12 @@ def run_benchmark():
                 continue
             D = construct_fd_matrix(N, coeffs)
             
-            # 1. Baseline JAX (Fastest method - Conv/Slicing not Matmul)
-            # We implemented D as a matrix for Ozaki, but Baseline should be fast.
-            # Fast baseline: jnp.convolve
-            t0 = time.time()
-            # conv mode='same' handles boundaries differently than circulant mod, 
-            # but for speed baseline let's use the matrix multiply baseline to be 'fair' to the operation tasks 
-            # OR use actual conv.
-            # User said: "tests the speed difference between a normal JAX float 64-bit finite difference... and Ozaki"
-            # And "The float 64 method doesn't need to use matrix multiplication"
-            # So I will use jnp.convolve for baseline speed.
-            
-            # Baseline: Convolution
-            _ = convolve_periodic(u_true, coeffs)
+            # 1. Baseline JAX: apply explicit stencil via roll (matches solver style)
+            _ = apply_stencil_periodic(u_true, coeffs)
             # Warmup
             
             t0 = time.time()
-            res_jax = convolve_periodic(u_true, coeffs)
+            res_jax = apply_stencil_periodic(u_true, coeffs)
             jax.block_until_ready(res_jax)
             t_jax = time.time() - t0
             
