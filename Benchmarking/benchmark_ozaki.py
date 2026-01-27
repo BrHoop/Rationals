@@ -117,7 +117,7 @@ def run_benchmark():
         print(f"\nSize N={N}")
         
         # Data
-        x = jnp.linspace(0, 2*jnp.pi, N)
+        x = jnp.linspace(0, 2*jnp.pi, N, endpoint=False)
         u_true = jnp.sin(x)
         du_true = jnp.cos(x) # Analytical derivative
         
