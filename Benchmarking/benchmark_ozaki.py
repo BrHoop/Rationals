@@ -84,7 +84,7 @@ def apply_stencil_periodic(u, coeffs):
     center = len(coeffs) // 2
     out = jnp.zeros_like(u)
     for i, c in enumerate(coeffs):
-        shift = i - center
+        shift = center - i
         out = out + c * jnp.roll(u, shift)
     return out
 
