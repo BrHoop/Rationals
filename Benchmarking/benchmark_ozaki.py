@@ -93,11 +93,14 @@ def run_benchmark():
     sizes = [256, 512, 1024, 2048, 4096, 8192] # Increasing sizes (bounded for dense matmul)
     
     results = {
-        'jax_native': [],
-        'ozaki_1': [],
-        'ozaki_2': []
+        order: {
+            'sizes': [],
+            'jax_native': [],
+            'ozaki_1': [],
+            'ozaki_2': [],
+        }
+        for order in orders
     }
-    sizes_used = []
     
     print("Starting Benchmark...")
     
@@ -113,6 +116,8 @@ def run_benchmark():
         for order in orders:
             print(f"  Order {order}...")
             coeffs = generate_fd_stencil_coeffs(order)
+            dx = float(x[1] - x[0])
+            coeffs = coeffs / dx
             # Guard against huge dense matrices
             if N * N > 200_000_000:
                 print("  Skipping: dense matrix would be too large for this N.")
@@ -162,38 +167,34 @@ def run_benchmark():
             t_o2 = time.time() - t0
             
             # Record
-            # We average over orders? Or plot separately?
-            # User wants "increasing sizes of data".
-            # Assume we plot for a 'typical' order, say 8, or sum them.
-            # Let's save data for Order=8 for the graph, or all.
-            if order == 8:
-                results['jax_native'].append(t_jax)
-                results['ozaki_1'].append(t_o1)
-                results['ozaki_2'].append(t_o2)
-                sizes_used.append(N)
+            results[order]['jax_native'].append(t_jax)
+            results[order]['ozaki_1'].append(t_o1)
+            results[order]['ozaki_2'].append(t_o2)
+            results[order]['sizes'].append(N)
                 
-            # Accuracy Check (just printing for now)
-            err_o1 = jnp.linalg.norm(res_o1.flatten() - du_true) # Warning: Scale of D/dx matters
-            # My construct_fd coeffs don't include 1/dx normalization.
-            # Ignoring normalization for speed test as it is just constant multiply.
-            
     # Modify data to be JSON serializable or just plot directly
-    plot_results(sizes_used, results)
+    plot_results(results)
 
-def plot_results(sizes, results):
-    plt.figure(figsize=(10, 6))
-    plt.plot(sizes, results['jax_native'], label='JAX Baseline (Conv)', marker='o')
-    plt.plot(sizes, results['ozaki_1'], label='Ozaki Scheme 1 (MatMul)', marker='x')
-    plt.plot(sizes, results['ozaki_2'], label='Ozaki Scheme 2 (Modular)', marker='s')
-    
-    plt.xlabel('Data Size N')
-    plt.ylabel('Time (s)')
-    plt.title('Finite Difference Efficiency: Ozaki vs Baseline')
-    plt.legend()
-    plt.grid(True)
-    plt.yscale('log')
-    plt.savefig('efficiency_benchmark.png')
-    print("Benchmark saved to efficiency_benchmark.png")
+def plot_results(results):
+    for order, data in results.items():
+        if not data['sizes']:
+            print(f"No data collected for order {order}; skipping plot.")
+            continue
+        plt.figure(figsize=(10, 6))
+        plt.plot(data['sizes'], data['jax_native'], label='JAX Baseline (Conv)', marker='o')
+        plt.plot(data['sizes'], data['ozaki_1'], label='Ozaki Scheme 1 (MatMul)', marker='x')
+        plt.plot(data['sizes'], data['ozaki_2'], label='Ozaki Scheme 2 (Modular)', marker='s')
+        
+        plt.xlabel('Data Size N')
+        plt.ylabel('Time (s)')
+        plt.title(f'Finite Difference Efficiency (Order {order})')
+        plt.legend()
+        plt.grid(True)
+        plt.yscale('log')
+        out_path = f'efficiency_benchmark_order_{order}.png'
+        plt.savefig(out_path)
+        plt.close()
+        print(f"Benchmark saved to {out_path}")
 
 if __name__ == "__main__":
     run_benchmark()
