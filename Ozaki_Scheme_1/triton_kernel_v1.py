@@ -76,7 +76,7 @@ def triton_matmul(A: jax.Array, B: jax.Array) -> jax.Array:
         return triton_call(
             A, B,
             kernel=matmul_kernel,
-            out_shape=(M, N),
+            out_shape=jax.ShapeDtypeStruct((M, N), jnp.float32),
             out_dtype=jnp.float32,
             grid=grid,
             BLOCK_SIZE_M=BLOCK_SIZE_M,
