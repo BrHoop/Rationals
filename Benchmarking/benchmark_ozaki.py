@@ -17,34 +17,42 @@ from Ozaki_Scheme_2.ozaki_v2 import ozaki_scheme_2_solve
 jax.config.update("jax_enable_x64", True)
 
 
+def _fd_weights(x0, x, deriv):
+    n = len(x)
+    m = deriv
+    c = np.zeros((n, m + 1), dtype=np.float64)
+    c1 = 1.0
+    c4 = x[0] - x0
+    c[0, 0] = 1.0
+    for i in range(1, n):
+        mn = min(i, m)
+        c2 = 1.0
+        c5 = c4
+        c4 = x[i] - x0
+        for j in range(i):
+            c3 = x[i] - x[j]
+            c2 *= c3
+            if j == i - 1:
+                for k in range(mn, 0, -1):
+                    c[i, k] = (c1 * (k * c[i - 1, k - 1] - c5 * c[i - 1, k])) / c2
+                c[i, 0] = -c1 * c5 * c[i - 1, 0] / c2
+            for k in range(mn, 0, -1):
+                c[j, k] = (c4 * c[j, k] - k * c[j, k - 1]) / c3
+            c[j, 0] = c4 * c[j, 0] / c3
+        c1 = c2
+    return c[:, m]
+
 def generate_fd_stencil_coeffs(order: int):
     """
     Generates centered finite difference coefficients for the 1st derivative.
-    Simplistic generation using standard formulas or pre-computed table.
-    For this demo, we use a simple set or a placeholder generator.
+    For a centered stencil of size 2p+1, the accuracy order is 2p.
     """
-    # Placeholder for orders 2, 4, 6... (even orders of accuracy for centered diff)
-    # Order usually implies accuracy O(h^order).
-    # Since the user asked for 1st to 16th order, we'll try to find coefficients.
-    
-    # Correct coefficients for centered difference first derivative:
-    # 2nd order: [-1/2, 0, 1/2]
-    # 4th order: [1/12, -2/3, 0, 2/3, -1/12]
-    # ...
-    # We will use scipy if available, else approximate/hardcode small ones to demonstrate.
-    try:
-        from scipy.misc import central_diff_weights
-        # scipy.misc.central_diff_weights(Np, ndiv=1)
-        # Np is number of points. Order N needs N+1 points?
-        # For order k accuracy, we need roughly k+1 points.
-        size = order + 1
-        if size % 2 == 0: size += 1 # Ensure odd size for centered
-        coeffs = central_diff_weights(size, 1) # 1st derivative
-        return jnp.array(coeffs)
-    except ImportError:
-        # Fallback dummy coeffs
-        width = order // 2 + 1
-        return jnp.ones(2*width+1) / (2*width+1)
+    if order % 2 != 0 or order <= 0:
+        raise ValueError("Order must be a positive even integer.")
+    p = order // 2
+    x = np.arange(-p, p + 1, dtype=np.float64)
+    coeffs = _fd_weights(0.0, x, 1)
+    return jnp.array(coeffs)
 
 def construct_fd_matrix(N, coeffs):
     """
@@ -63,33 +71,33 @@ def construct_fd_matrix(N, coeffs):
     center = len(coeffs) // 2
     
     # Build a circulant matrix for periodic boundaries to keep it simple and dense-like structure
-    expanded = np.zeros(N)
+    expanded = np.zeros(N, dtype=np.float64)
     for i, c in enumerate(coeffs):
         offset = i - center
-        expanded[offset % N] = c
-        
-    # Construct circulant matrix
-    # col 0 is [c0, c1, ..., c-1] transposed/shifted?
-    # standard circulant: row k is roll(row 0, k)
+        expanded[offset % N] = float(c)
     
-    # Actually, let's just make a random matrix if we only care about MATMUL performance
-    # But the user specifically asked for "tests the speed difference... of Ozaki scheme finite difference"
-    # So we should use the FD matrix structure.
-    
-    # Using scipy toeplitz
-    from scipy.linalg import circulant
-    D_dense = circulant(expanded).T # Transpose to align with convolution direction?
+    # Construct circulant matrix without SciPy
+    D_dense = np.stack([np.roll(expanded, i) for i in range(N)], axis=0)
     return jnp.array(D_dense)
+
+def convolve_periodic(u, coeffs):
+    n = u.shape[0]
+    center = len(coeffs) // 2
+    kernel = jnp.zeros(n, dtype=u.dtype)
+    for i, c in enumerate(coeffs):
+        kernel = kernel.at[(i - center) % n].set(c)
+    return jnp.fft.ifft(jnp.fft.fft(u) * jnp.fft.fft(kernel)).real
 
 def run_benchmark():
     orders = [2, 4, 8, 16] # Testing specific orders
-    sizes = [100, 200, 400, 800, 1600, 3200, 6400, 12800, 25600] # Increasing sizes
+    sizes = [256, 512, 1024, 2048, 4096, 8192] # Increasing sizes (bounded for dense matmul)
     
     results = {
         'jax_native': [],
         'ozaki_1': [],
         'ozaki_2': []
     }
+    sizes_used = []
     
     print("Starting Benchmark...")
     
@@ -105,6 +113,10 @@ def run_benchmark():
         for order in orders:
             print(f"  Order {order}...")
             coeffs = generate_fd_stencil_coeffs(order)
+            # Guard against huge dense matrices
+            if N * N > 200_000_000:
+                print("  Skipping: dense matrix would be too large for this N.")
+                continue
             D = construct_fd_matrix(N, coeffs)
             
             # 1. Baseline JAX (Fastest method - Conv/Slicing not Matmul)
@@ -119,11 +131,11 @@ def run_benchmark():
             # So I will use jnp.convolve for baseline speed.
             
             # Baseline: Convolution
-            _ = jnp.convolve(u_true, coeffs, mode='same') 
+            _ = convolve_periodic(u_true, coeffs)
             # Warmup
             
             t0 = time.time()
-            res_jax = jnp.convolve(u_true, coeffs, mode='same')
+            res_jax = convolve_periodic(u_true, coeffs)
             jax.block_until_ready(res_jax)
             t_jax = time.time() - t0
             
@@ -158,6 +170,7 @@ def run_benchmark():
                 results['jax_native'].append(t_jax)
                 results['ozaki_1'].append(t_o1)
                 results['ozaki_2'].append(t_o2)
+                sizes_used.append(N)
                 
             # Accuracy Check (just printing for now)
             err_o1 = jnp.linalg.norm(res_o1.flatten() - du_true) # Warning: Scale of D/dx matters
@@ -165,7 +178,7 @@ def run_benchmark():
             # Ignoring normalization for speed test as it is just constant multiply.
             
     # Modify data to be JSON serializable or just plot directly
-    plot_results(sizes, results)
+    plot_results(sizes_used, results)
 
 def plot_results(sizes, results):
     plt.figure(figsize=(10, 6))

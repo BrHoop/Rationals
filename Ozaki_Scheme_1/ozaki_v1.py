@@ -1,8 +1,8 @@
 import jax
 import jax.numpy as jnp
-import numpy as np
+from .triton_kernel_v1 import triton_matmul
 
-def split_matrix(A: jnp.ndarray, epsilon: float = 2**(-23)):
+def split_matrix(A: jnp.ndarray, epsilon: float = 2**(-23), max_splits: int = 5):
     """
     Decomposes matrix A into a sum of matrices A_k such that A ~ sum(A_k).
     This is a simplified splitting strategy for floating point numbers.
@@ -28,10 +28,7 @@ def split_matrix(A: jnp.ndarray, epsilon: float = 2**(-23)):
     # Heuristic loop - in reality this depends on the condition number and precision
     # This is a naive 'stripping' approach.
     # A proper Ozaki implementation calculates split points strictly.
-    for _ in range(5): # Limit splits
-        # Find max exponent
-        max_val = jnp.max(jnp.abs(residual))
-        
+    for _ in range(max_splits): # Limit splits
         # Extract the most significant part that fits in 'epsilon' precision (e.g. float32/tf32)
         # This simulates taking the 'head' of the float.
         # casting to float32 and back is a rough approximation of 'splitting' 
@@ -70,11 +67,11 @@ def ozaki_matmul_v1(A: jnp.ndarray, B: jnp.ndarray):
             # The core idea: Ak @ Bj can be computed safely with lower precision
             # then accumulated in high precision.
             # In JAX, we can enforce lower precision math:
-            pass 
-            # partial = jnp.matmul(Ak.astype(jnp.float32), Bj.astype(jnp.float32), precision=jax.lax.Precision.DEFAULT)
-            # But we are in an algorithm demo, so let's just use the splits.
-            
-            partial = jnp.matmul(Ak, Bj) # This is effectively correct if Ak, Bj are small enough
+            # Prefer Triton when available for TF32/FP32 accumulation.
+            if triton_matmul is not None:
+                partial = triton_matmul(Ak.astype(jnp.float32), Bj.astype(jnp.float32)).astype(jnp.float64)
+            else:
+                partial = jnp.matmul(Ak.astype(jnp.float32), Bj.astype(jnp.float32)).astype(jnp.float64)
             C += partial
             
     return C

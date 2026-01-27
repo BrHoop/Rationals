@@ -16,58 +16,38 @@ try:
         BLOCK_SIZE_M: tl.constexpr, BLOCK_SIZE_N: tl.constexpr, BLOCK_SIZE_K: tl.constexpr,
     ):
         """
-        Computes C = (A @ B) % modulus
-        Inputs A, B are integers.
+        Computes C = (A @ B) mod modulus.
+        Inputs A, B are int8, outputs int32 residues in [0, modulus).
         """
         pid_m = tl.program_id(0)
         pid_n = tl.program_id(1)
         
-        offs_am = (pid_m * BLOCK_SIZE_M + tl.arange(0, BLOCK_SIZE_M)) % M
-        offs_bn = (pid_n * BLOCK_SIZE_N + tl.arange(0, BLOCK_SIZE_N)) % N
+        offs_m = pid_m * BLOCK_SIZE_M + tl.arange(0, BLOCK_SIZE_M)
+        offs_n = pid_n * BLOCK_SIZE_N + tl.arange(0, BLOCK_SIZE_N)
         offs_k = tl.arange(0, BLOCK_SIZE_K)
         
-        a_ptrs = a_ptr + (offs_am[:, None] * stride_am + offs_k[None, :] * stride_ak)
-        b_ptrs = b_ptr + (offs_k[:, None] * stride_bk + offs_bn[None, :] * stride_bn)
+        a_ptrs = a_ptr + (offs_m[:, None] * stride_am + offs_k[None, :] * stride_ak)
+        b_ptrs = b_ptr + (offs_k[:, None] * stride_bk + offs_n[None, :] * stride_bn)
         
-        accumulator = tl.zeros((BLOCK_SIZE_M, BLOCK_SIZE_N), dtype=tl.int64)
+        acc = tl.zeros((BLOCK_SIZE_M, BLOCK_SIZE_N), dtype=tl.int32)
         
         for k in range(0, K, BLOCK_SIZE_K):
-            # We assume K is multiple of BLOCK_SIZE_K for simplicity in this demo
-            a = tl.load(a_ptrs)
-            b = tl.load(b_ptrs)
+            k_mask = (k + offs_k) < K
+            a_mask = (offs_m[:, None] < M) & k_mask[None, :]
+            b_mask = k_mask[:, None] & (offs_n[None, :] < N)
             
-            # Dot product
-            # Note: standard triton dot might output fp32 for int8 inputs or similar
-            # For int32 inputs, we want int32/int64 accumulation.
-            # Triton's tl.dot support for int is evolving.
-            # Assuming we can do standard matmul here.
-            # If tl.dot doesn't support int64 accumulation well on all hardware, we might rely on float emu or pure loops.
-            # For this exercise, we assume it works or we use a manual reduction if needed.
-            # Let's try simple dot.
+            a = tl.load(a_ptrs, mask=a_mask, other=0).to(tl.int8)
+            b = tl.load(b_ptrs, mask=b_mask, other=0).to(tl.int8)
             
-            # Cast to int8 to force Tensor Core usage where available
-            # Note: This assumes input data has been properly scaled/split to fit in 8 bits.
-            # a and b loaded as whatever type pointers are (simulated int64 here), so we cast.
-            a_int8 = a.to(tl.int8)
-            b_int8 = b.to(tl.int8)
-            
-            partial = tl.dot(a_int8, b_int8) # Accumulates into int32 usually
-            accumulator += partial.to(tl.int64)
-            
-            # Modulo at each step to prevent overflow?
-            # If we do mod at each step, we need manual loop dot.
-            # Standard hardware MATMUL does not support modulo.
-            # So we accumulate and hope it doesn't overflow before the end, OR we act on small blocks.
-            # Given Ozaki Scheme, we assume we picked moduli such that A*B fits in accumulator precision (int64).
+            acc += tl.dot(a, b)
+            acc = acc % modulus
             
             a_ptrs += BLOCK_SIZE_K * stride_ak
             b_ptrs += BLOCK_SIZE_K * stride_bk
             
-        # Final Modulo
-        c = accumulator % modulus
-        
-        c_ptrs = c_ptr + stride_cm * offs_am[:, None] + stride_cn * offs_bn[None, :]
-        tl.store(c_ptrs, c)
+        c_ptrs = c_ptr + stride_cm * offs_m[:, None] + stride_cn * offs_n[None, :]
+        c_mask = (offs_m[:, None] < M) & (offs_n[None, :] < N)
+        tl.store(c_ptrs, acc, mask=c_mask)
 except ImportError:
     triton = None
     triton_call = None
@@ -82,6 +62,8 @@ def triton_modular_matmul(A: jax.Array, B: jax.Array, modulus: int) -> jax.Array
         if triton_call is None:
             raise ImportError("Triton not available")
             
+        A = A.astype(jnp.int8)
+        B = B.astype(jnp.int8)
         M, K = A.shape
         K2, N = B.shape
         assert K == K2
@@ -99,7 +81,7 @@ def triton_modular_matmul(A: jax.Array, B: jax.Array, modulus: int) -> jax.Array
             A, B,
             kernel=modular_matmul_kernel,
             out_shape=(M, N),
-            out_dtype=jnp.int64, # Output is integer
+            out_dtype=jnp.int32, # Output residues as int32
             grid=grid,
             modulus=modulus,
             BLOCK_SIZE_M=BLOCK_SIZE_M,
@@ -111,4 +93,4 @@ def triton_modular_matmul(A: jax.Array, B: jax.Array, modulus: int) -> jax.Array
         # (A @ B) % modulus
         # Warning: A @ B might overflow int64 if not careful
         # But for benchmark logic flow we accept this standard behavior
-        return jnp.matmul(A, B) % modulus
+        return (jnp.matmul(A.astype(jnp.int32), B.astype(jnp.int32)) % modulus).astype(jnp.int32)

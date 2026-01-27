@@ -21,35 +21,31 @@ try:
         pid_m = tl.program_id(0)
         pid_n = tl.program_id(1)
         
-        # Range of calculating
-        offs_am = (pid_m * BLOCK_SIZE_M + tl.arange(0, BLOCK_SIZE_M)) % M
-        offs_bn = (pid_n * BLOCK_SIZE_N + tl.arange(0, BLOCK_SIZE_N)) % N
+        offs_m = pid_m * BLOCK_SIZE_M + tl.arange(0, BLOCK_SIZE_M)
+        offs_n = pid_n * BLOCK_SIZE_N + tl.arange(0, BLOCK_SIZE_N)
         offs_k = tl.arange(0, BLOCK_SIZE_K)
         
-        a_ptrs = a_ptr + (offs_am[:, None] * stride_am + offs_k[None, :] * stride_ak)
-        b_ptrs = b_ptr + (offs_k[:, None] * stride_bk + offs_bn[None, :] * stride_bn)
+        a_ptrs = a_ptr + (offs_m[:, None] * stride_am + offs_k[None, :] * stride_ak)
+        b_ptrs = b_ptr + (offs_k[:, None] * stride_bk + offs_n[None, :] * stride_bn)
         
         accumulator = tl.zeros((BLOCK_SIZE_M, BLOCK_SIZE_N), dtype=tl.float32)
         
         for k in range(0, K, BLOCK_SIZE_K):
-            # Load logic with boundary checks if K is not multiple of BLOCK_SIZE_K
-            # For simplicity assuming dimensions match block alignment or simple mask
-            # But here we use a simple loop over K
+            k_mask = (k + offs_k) < K
+            a_mask = (offs_m[:, None] < M) & k_mask[None, :]
+            b_mask = k_mask[:, None] & (offs_n[None, :] < N)
             
-            # Masking for K dimension if needed
-            # k_remaining = K - k
-            # mask = offs_k < k_remaining
-            
-            a = tl.load(a_ptrs) # mask=mask[None, :]
-            b = tl.load(b_ptrs) # mask=mask[:, None]
+            a = tl.load(a_ptrs, mask=a_mask, other=0.0)
+            b = tl.load(b_ptrs, mask=b_mask, other=0.0)
             
             accumulator += tl.dot(a, b)
             
             a_ptrs += BLOCK_SIZE_K * stride_ak
             b_ptrs += BLOCK_SIZE_K * stride_bk
             
-        c_ptrs = c_ptr + stride_cm * offs_am[:, None] + stride_cn * offs_bn[None, :]
-        tl.store(c_ptrs, accumulator)
+        c_ptrs = c_ptr + stride_cm * offs_m[:, None] + stride_cn * offs_n[None, :]
+        c_mask = (offs_m[:, None] < M) & (offs_n[None, :] < N)
+        tl.store(c_ptrs, accumulator, mask=c_mask)
 except ImportError:
     triton = None
     triton_call = None

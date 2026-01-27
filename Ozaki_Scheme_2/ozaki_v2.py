@@ -1,111 +1,88 @@
 
+import math
+import numpy as np
 import jax
 import jax.numpy as jnp
 from .triton_mod_matmul import triton_modular_matmul
 
-def crt_reconstruct(remainders, moduli):
-    """
-    Simple Chinese Remainder Theorem reconstruction.
-    x = r1 (mod m1)
-    x = r2 (mod m2)
-    ...
-    Returns x mod (m1*m2*...)
-    """
-    total_product = 1
-    for m in moduli:
-        total_product *= m
-        
-    result = 0
-    for r, m in zip(remainders, moduli):
-        partial_product = total_product // m
-        # inverse of partial_product modulo m
-        # In JAX we might need a workaround for pow(a, -1, m) if not directly supported vectorized.
-        # But this loop is small (runs on host mostly or small items).
-        
-        # Since we are in JAX, let's assume we do this on CPU numpy or use simple logic.
-        inverse = pow(int(partial_product), -1, int(m))
-        result += r * inverse * partial_product
-        
-    return result % total_product
+# INT8-friendly moduli from the paper (m in eq. (19)); pairwise coprime, all <= 256.
+MODULI_INT8 = [
+    256, 255, 253, 251, 247, 239, 233, 229,
+    227, 223, 217, 211, 199, 197, 193, 191
+]
 
-def ozaki_scheme_2_solve(A: jax.Array, B: jax.Array):
-    """
-    Implements Ozaki Scheme 2.
-    1. Scale inputs A, B to integers (lossless if possible or high precision simulation).
-    2. Compute A*B mod mk for several mk.
-    3. Reconstruct.
-    """
-    # 1. Scaling / Integer conversion
-    # For a real implementation, we find the common exponent or scaling factor.
-    # To keep it simple for this demonstration:
-    # We assume A, B are float64. We want to emulate higher precision or just correct float64 matmul.
-    # We'll map float mantissas to integers.
-    
-    # Scale such that elements are integers.
-    # E.g. multiply by 2^53?
-    # This might make them huge.
-    # Ideally we operate on the mantissas directly.
-    pass 
-    
-    # simplified: scale by large factor
-    scale = 1e9 # arbitrary for demo
-    A_int = (A * scale).astype(jnp.int64)
-    B_int = (B * scale).astype(jnp.int64)
-    
-    # 2. Modular Arithmetic
-    # Choose primes. 
-    moduli = [2147483647, 2147483629, 2147483587] # 3 large primes ~2^31
-    
-    results = []
-    for m in moduli:
-        # A_p = A_int % m # JAX doesn't like float % int sometimes, ensure types
-        A_p = A_int % m
-        B_p = B_int % m
-        
-        # Use Triton Kernel
-        C_p = triton_modular_matmul(A_p, B_p, m)
-        results.append(C_p)
-        
-    # 3. Reconstruction (CRT)
-    # This part is tricky in pure JAX vectorized, usually done on CPU/host or with custom logic.
-    # We'll do a simplified reconstruction.
-    
-    C_total_int = 0
-    prod = 1
-    
-    # Iterative CRT (Garner's algorithm or similar) - simplify for list
-    # x = a1 + m1 * ((a2 - a1)*inv(m1, m2)) + ...
-    # Let's trust pure python loop for the CRT coefficients for the "image" of the matrix
-    # Actually, we need to do this PER ELEMENT of the matrix. 
-    # That is expensive in Python.
-    
-    # For speed in this demo, let's just assume we sum them up weighted (naive)
-    # or implement a vectorized CRT step here.
-    
+def _symmetric_mod(x, m: int):
+    half = m // 2
+    return ((x + half) % m) - half
+
+def _crt_coeffs(moduli):
     M = 1
     for m in moduli:
-        M *= m
-        
-    C_reconstructed = jnp.zeros_like(results[0], dtype=jnp.int64) # Need object or big int?
-    # JAX int64 handles up to 2^63. M is ~2^93. This will overflow JAX int64.
-    # To TRULY implement Ozaki Scheme 2 for >64bit results, we need a BigInt representation in JAX (like multiple int64s).
-    # OR we convert back to float immediately if we just needed intermediate accuracy.
-    
-    # Let's settle for accumulating into Float64 directly as a "reconstruction".
-    # or computing the 'double - double' result.
-    
-    # Placeholder: Simple average or single modulus for this implementation constraint.
-    # Assuming user wants the STRUCTURE of the algorithm.
-    
-    # Reconstructing directly to float:
-    # C ~ sum ( ... )
-    
-    # To respect the prompt "Implement ... using Triton", the kernel is the key.
-    # We'll just return the float conversion of the first modulus result for now or a dummy mix
-    # to allow the benchmark to run without crashing on BigInt logic.
-    
-    # Valid "Scheme 2" would convert back to float.
-    C_final = results[0].astype(jnp.float64) / (scale * scale) # very rough approximation
-    
-    return C_final
+        M *= int(m)
+    coeffs = []
+    for m in moduli:
+        Mi = M // int(m)
+        yi = pow(int(Mi), -1, int(m))
+        coeffs.append(Mi * yi)
+    return M, coeffs
 
+def _compute_scaling(A: jax.Array, B: jax.Array, moduli):
+    q = A.shape[1]
+    M = 1
+    for m in moduli:
+        M *= int(m)
+    if M <= 2 or q <= 0:
+        return 1.0, 1.0, 0, 0, M
+    target = (M / 2.0 - 1.0) / float(q)
+    k_sum = int(max(0.0, math.floor(math.log2(target)))) if target > 1.0 else 0
+    kA = k_sum // 2
+    kB = k_sum - kA
+    scale_A = float(2 ** kA)
+    scale_B = float(2 ** kB)
+    return scale_A, scale_B, kA, kB, M
+
+def _crt_reconstruct_host(Cs, coeffs, M: int):
+    acc = None
+    for C_t, coeff in zip(Cs, coeffs):
+        C_np = np.array(jax.device_get(C_t), dtype=object)
+        term = C_np * int(coeff)
+        acc = term if acc is None else acc + term
+    acc = acc % int(M)
+    half = M // 2
+    acc = (acc + half) % int(M) - half
+    return jnp.array(acc, dtype=jnp.float64)
+
+def ozaki_scheme_2_solve(A: jax.Array, B: jax.Array, num_moduli: int = 6, moduli=None):
+    """
+    Implements Ozaki Scheme II (Algorithm 1 in the paper) using INT8 tensor cores.
+    """
+    moduli = MODULI_INT8[:num_moduli] if moduli is None else list(moduli)
+    if len(moduli) == 0:
+        raise ValueError("At least one modulus is required.")
+    
+    # 1) Determine shift values (D, E) and convert FP64 to integers.
+    scale_A, scale_B, _, _, M = _compute_scaling(A, B, moduli)
+    A_prime = jnp.trunc(A * scale_A).astype(jnp.int64)
+    B_prime = jnp.trunc(B * scale_B).astype(jnp.int64)
+    
+    # 2) Modular arithmetic and INT8 tensor core GEMM.
+    Cs = []
+    for m in moduli:
+        A_t = _symmetric_mod(A_prime, m).astype(jnp.int8)
+        B_t = _symmetric_mod(B_prime, m).astype(jnp.int8)
+        C_t = triton_modular_matmul(A_t, B_t, int(m))  # int32 residues
+        Cs.append(C_t)
+    
+    # 3) CRT reconstruction: C ≡ A'B' (mod M)
+    M_full, coeffs = _crt_coeffs(moduli)
+    if M_full <= 2 ** 55:
+        acc = jnp.zeros_like(Cs[0], dtype=jnp.int64)
+        for C_t, coeff in zip(Cs, coeffs):
+            acc = (acc + C_t.astype(jnp.int64) * jnp.int64(coeff)) % jnp.int64(M_full)
+        acc = _symmetric_mod(acc, M_full)
+        C = acc.astype(jnp.float64) / (scale_A * scale_B)
+        return C
+    
+    # Fallback: exact host-side CRT for large M (slow but correct).
+    C_host = _crt_reconstruct_host(Cs, coeffs, M_full)
+    return C_host / (scale_A * scale_B)
