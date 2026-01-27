@@ -101,6 +101,15 @@ def run_benchmark():
         }
         for order in orders
     }
+    accuracy = {
+        order: {
+            'sizes': [],
+            'jax_native': [],
+            'ozaki_1': [],
+            'ozaki_2': [],
+        }
+        for order in orders
+    }
     
     print("Starting Benchmark...")
     
@@ -171,9 +180,19 @@ def run_benchmark():
             results[order]['ozaki_1'].append(t_o1)
             results[order]['ozaki_2'].append(t_o2)
             results[order]['sizes'].append(N)
-                
+            
+            # Accuracy
+            err_jax = jnp.linalg.norm(res_jax - du_true) / jnp.linalg.norm(du_true)
+            err_o1 = jnp.linalg.norm(res_o1.flatten() - du_true) / jnp.linalg.norm(du_true)
+            err_o2 = jnp.linalg.norm(res_o2.flatten() - du_true) / jnp.linalg.norm(du_true)
+            accuracy[order]['jax_native'].append(float(err_jax))
+            accuracy[order]['ozaki_1'].append(float(err_o1))
+            accuracy[order]['ozaki_2'].append(float(err_o2))
+            accuracy[order]['sizes'].append(N)
+            
     # Modify data to be JSON serializable or just plot directly
     plot_results(results)
+    plot_accuracy(accuracy)
 
 def plot_results(results):
     for order, data in results.items():
@@ -195,6 +214,28 @@ def plot_results(results):
         plt.savefig(out_path)
         plt.close()
         print(f"Benchmark saved to {out_path}")
+
+def plot_accuracy(accuracy):
+    for order, data in accuracy.items():
+        if not data['sizes']:
+            print(f"No accuracy data collected for order {order}; skipping plot.")
+            continue
+        plt.figure(figsize=(10, 6))
+        plt.plot(data['sizes'], data['jax_native'], label='JAX Baseline (Conv)', marker='o')
+        plt.plot(data['sizes'], data['ozaki_1'], label='Ozaki Scheme 1 (MatMul)', marker='x')
+        plt.plot(data['sizes'], data['ozaki_2'], label='Ozaki Scheme 2 (Modular)', marker='s')
+        
+        plt.xlabel('Data Size N')
+        plt.ylabel('Relative L2 Error')
+        plt.title(f'Finite Difference Accuracy (Order {order})')
+        plt.legend()
+        plt.grid(True)
+        plt.xscale('log')
+        plt.yscale('log')
+        out_path = f'accuracy_benchmark_order_{order}.png'
+        plt.savefig(out_path)
+        plt.close()
+        print(f"Accuracy plot saved to {out_path}")
 
 if __name__ == "__main__":
     run_benchmark()
