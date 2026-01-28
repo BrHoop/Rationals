@@ -2,46 +2,33 @@ import jax
 import jax.numpy as jnp
 from .triton_kernel_v1 import triton_matmul
 
-def split_matrix(A: jnp.ndarray, epsilon: float = 2**(-23), max_splits: int = 5):
+def split_matrix(A: jnp.ndarray, target_bits: int = 10, max_splits: int = 5):
     """
     Decomposes matrix A into a sum of matrices A_k such that A ~ sum(A_k).
-    This is a simplified splitting strategy for floating point numbers.
-    
-    In the standard Ozaki scheme, splitting is done row-wise based on the maximum magnitude.
-    Here we implement a basic global or row-wise simpler splitting for demonstration
-    before moving to a full element-wise or block-wise exact split if required.
+    This implements a mantissa-chopping split with a fixed target mantissa width.
     
     Args:
         A: Input matrix (FP64)
-        epsilon: Splitting threshold (related to target low-precision mantissa)
+        target_bits: Target mantissa bits to retain per split (e.g., 10 for TF32)
         
     Returns:
         List of matrices [A_0, A_1, ...]
     """
-    # Placeholder for the actual splitting logic
-    # Real Ozaki splitting separates the mantissa range.
-    # For now, let's implement a power-of-2 splitting simplified.
-    
     splits = []
     residual = A
     
-    # Heuristic loop - in reality this depends on the condition number and precision
-    # This is a naive 'stripping' approach.
-    # A proper Ozaki implementation calculates split points strictly.
-    for _ in range(max_splits): # Limit splits
-        # Extract the most significant part that fits in 'epsilon' precision (e.g. float32/tf32)
-        # This simulates taking the 'head' of the float.
-        # casting to float32 and back is a rough approximation of 'splitting' 
-        # but Ozaki usually does this shift-and-truncate operation carefully.
-        
-        split = residual.astype(jnp.float32).astype(jnp.float64)
+    for _ in range(max_splits):
+        abs_residual = jnp.abs(residual)
+        exp = jnp.where(abs_residual > 0, jnp.floor(jnp.log2(abs_residual)), 0.0)
+        scale = jnp.exp2(exp - (target_bits - 1))
+        split = jnp.round(residual / scale) * scale
         splits.append(split)
         residual = residual - split
         
     return splits
 
 @jax.jit
-def ozaki_matmul_v1(A: jnp.ndarray, B: jnp.ndarray):
+def ozaki_matmul_v1(A: jnp.ndarray, B: jnp.ndarray, target_bits: int = 10, max_splits: int = 5):
     """
     Performs Matrix Multiplication using a simplified Ozaki-like splitting scheme.
     C = A * B
@@ -57,8 +44,8 @@ def ozaki_matmul_v1(A: jnp.ndarray, B: jnp.ndarray):
     # If we target TensorCores (TF32), mantissa is 10 bits.
     # Let's assume we want to use TF32-like behavior.
     
-    A_splits = split_matrix(A)
-    B_splits = split_matrix(B)
+    A_splits = split_matrix(A, target_bits=target_bits, max_splits=max_splits)
+    B_splits = split_matrix(B, target_bits=target_bits, max_splits=max_splits)
     
     C = jnp.zeros((A.shape[0], B.shape[1]), dtype=jnp.float64)
     

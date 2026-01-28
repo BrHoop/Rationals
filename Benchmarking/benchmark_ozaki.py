@@ -16,6 +16,21 @@ from Ozaki_Scheme_2.ozaki_v2 import ozaki_scheme_2_solve
 # Enable x64
 jax.config.update("jax_enable_x64", True)
 
+def _has_tensor_cores():
+    try:
+        dev = jax.devices()[0]
+        platform = dev.platform
+        kind = getattr(dev, "device_kind", "")
+        if platform != "gpu":
+            return False
+        if "NVIDIA" not in kind.upper():
+            return False
+        from Ozaki_Scheme_1 import triton_kernel_v1 as tk1
+        from Ozaki_Scheme_2 import triton_mod_matmul as tk2
+        return tk1.triton_call is not None and tk2.triton_call is not None
+    except Exception:
+        return False
+
 
 def _fd_weights(x0, x, deriv):
     n = len(x)
@@ -91,11 +106,13 @@ def apply_stencil_periodic(u, coeffs):
 def run_benchmark():
     orders = [2, 4, 8, 16] # Testing specific orders
     sizes = [256, 512, 1024, 2048, 4096, 8192] # Increasing sizes (bounded for dense matmul)
+    num_moduli = int(os.environ.get("OZAKI_NUM_MODULI", "8"))
     
     results = {
         order: {
             'sizes': [],
-            'jax_native': [],
+            'jax_matmul': [],
+            'jax_stencil': [],
             'ozaki_1': [],
             'ozaki_2': [],
         }
@@ -104,12 +121,16 @@ def run_benchmark():
     accuracy = {
         order: {
             'sizes': [],
-            'jax_native': [],
+            'jax_matmul': [],
+            'jax_stencil': [],
             'ozaki_1': [],
             'ozaki_2': [],
         }
         for order in orders
     }
+    use_ozaki = _has_tensor_cores()
+    if not use_ozaki:
+        print("Ozaki schemes disabled: Tensor Core-capable NVIDIA GPU + Triton required.")
     
     print("Starting Benchmark...")
     
@@ -133,50 +154,70 @@ def run_benchmark():
                 continue
             D = construct_fd_matrix(N, coeffs)
             
-            # 1. Baseline JAX: apply explicit stencil via roll (matches solver style)
+            # 1a. Baseline JAX FP64 matmul (like-for-like with Ozaki matmul)
+            u_col = u_true.reshape(-1, 1)
+            _ = jnp.matmul(D, u_col)
+            t0 = time.perf_counter()
+            res_jax = jnp.matmul(D, u_col)
+            res_jax.block_until_ready()
+            t_jax = time.perf_counter() - t0
+
+            # 1b. Baseline stencil application (algorithmic reference)
             _ = apply_stencil_periodic(u_true, coeffs)
-            # Warmup
-            
-            t0 = time.time()
-            res_jax = apply_stencil_periodic(u_true, coeffs)
-            jax.block_until_ready(res_jax)
-            t_jax = time.time() - t0
+            t0 = time.perf_counter()
+            res_stencil = apply_stencil_periodic(u_true, coeffs)
+            res_stencil.block_until_ready()
+            t_stencil = time.perf_counter() - t0
             
             # 2. Ozaki 1 (Matmul)
             # D @ u
             # Warmup
-            # Note: My ozaki impl expects matrix-matrix usually, but works for vector if shaped (N,1)
-            u_col = u_true.reshape(-1, 1)
-            _ = ozaki_matmul_v1(D, u_col)
-            
-            t0 = time.time()
-            res_o1 = ozaki_matmul_v1(D, u_col)
-            # jax.block_until_ready(res_o1) # ozaki returns jax array
-            res_o1.block_until_ready()
-            t_o1 = time.time() - t0
+            # Note: Ozaki impl expects matrix-matrix, so use (N,1) vector
+            if use_ozaki:
+                _ = ozaki_matmul_v1(D, u_col)
+                
+                t0 = time.perf_counter()
+                res_o1 = ozaki_matmul_v1(D, u_col)
+                # jax.block_until_ready(res_o1) # ozaki returns jax array
+                res_o1.block_until_ready()
+                t_o1 = time.perf_counter() - t0
+            else:
+                res_o1 = None
+                t_o1 = float("nan")
             
             # 3. Ozaki 2 (Matmul)
             # Warmup
-            _ = ozaki_scheme_2_solve(D, u_col)
-            
-            t0 = time.time()
-            res_o2 = ozaki_scheme_2_solve(D, u_col)
-            res_o2.block_until_ready()
-            t_o2 = time.time() - t0
+            if use_ozaki:
+                _ = ozaki_scheme_2_solve(D, u_col, num_moduli=num_moduli)
+                
+                t0 = time.perf_counter()
+                res_o2 = ozaki_scheme_2_solve(D, u_col, num_moduli=num_moduli)
+                res_o2.block_until_ready()
+                t_o2 = time.perf_counter() - t0
+            else:
+                res_o2 = None
+                t_o2 = float("nan")
             
             # Record
-            results[order]['jax_native'].append(t_jax)
+            results[order]['jax_matmul'].append(t_jax)
+            results[order]['jax_stencil'].append(t_stencil)
             results[order]['ozaki_1'].append(t_o1)
             results[order]['ozaki_2'].append(t_o2)
             results[order]['sizes'].append(N)
             
             # Accuracy
-            err_jax = jnp.linalg.norm(res_jax - du_true) / jnp.linalg.norm(du_true)
-            err_o1 = jnp.linalg.norm(res_o1.flatten() - du_true) / jnp.linalg.norm(du_true)
-            err_o2 = jnp.linalg.norm(res_o2.flatten() - du_true) / jnp.linalg.norm(du_true)
-            accuracy[order]['jax_native'].append(float(err_jax))
-            accuracy[order]['ozaki_1'].append(float(err_o1))
-            accuracy[order]['ozaki_2'].append(float(err_o2))
+            err_jax = jnp.linalg.norm(res_jax.flatten() - du_true) / jnp.linalg.norm(du_true)
+            err_stencil = jnp.linalg.norm(res_stencil - du_true) / jnp.linalg.norm(du_true)
+            accuracy[order]['jax_matmul'].append(float(err_jax))
+            accuracy[order]['jax_stencil'].append(float(err_stencil))
+            if use_ozaki:
+                err_o1 = jnp.linalg.norm(res_o1.flatten() - du_true) / jnp.linalg.norm(du_true)
+                err_o2 = jnp.linalg.norm(res_o2.flatten() - du_true) / jnp.linalg.norm(du_true)
+                accuracy[order]['ozaki_1'].append(float(err_o1))
+                accuracy[order]['ozaki_2'].append(float(err_o2))
+            else:
+                accuracy[order]['ozaki_1'].append(float("nan"))
+                accuracy[order]['ozaki_2'].append(float("nan"))
             accuracy[order]['sizes'].append(N)
             
     # Modify data to be JSON serializable or just plot directly
@@ -188,10 +229,17 @@ def plot_results(results):
         if not data['sizes']:
             print(f"No data collected for order {order}; skipping plot.")
             continue
+        sizes = np.array(data['sizes'])
+        def _plot_series(values, label, marker):
+            vals = np.array(values, dtype=np.float64)
+            mask = np.isfinite(vals)
+            if np.any(mask):
+                plt.plot(sizes[mask], vals[mask], label=label, marker=marker)
         plt.figure(figsize=(10, 6))
-        plt.plot(data['sizes'], data['jax_native'], label='JAX Baseline (Conv)', marker='o')
-        plt.plot(data['sizes'], data['ozaki_1'], label='Ozaki Scheme 1 (MatMul)', marker='x')
-        plt.plot(data['sizes'], data['ozaki_2'], label='Ozaki Scheme 2 (Modular)', marker='s')
+        _plot_series(data['jax_matmul'], 'JAX Baseline (MatMul FP64)', 'o')
+        _plot_series(data['jax_stencil'], 'JAX Baseline (Stencil)', '^')
+        _plot_series(data['ozaki_1'], 'Ozaki Scheme 1 (MatMul)', 'x')
+        _plot_series(data['ozaki_2'], 'Ozaki Scheme 2 (Modular)', 's')
         
         plt.xlabel('Data Size N')
         plt.ylabel('Time (s)')
@@ -209,10 +257,17 @@ def plot_accuracy(accuracy):
         if not data['sizes']:
             print(f"No accuracy data collected for order {order}; skipping plot.")
             continue
+        sizes = np.array(data['sizes'])
+        def _plot_series(values, label, marker):
+            vals = np.array(values, dtype=np.float64)
+            mask = np.isfinite(vals)
+            if np.any(mask):
+                plt.plot(sizes[mask], vals[mask], label=label, marker=marker)
         plt.figure(figsize=(10, 6))
-        plt.plot(data['sizes'], data['jax_native'], label='JAX Baseline (Conv)', marker='o')
-        plt.plot(data['sizes'], data['ozaki_1'], label='Ozaki Scheme 1 (MatMul)', marker='x')
-        plt.plot(data['sizes'], data['ozaki_2'], label='Ozaki Scheme 2 (Modular)', marker='s')
+        _plot_series(data['jax_matmul'], 'JAX Baseline (MatMul FP64)', 'o')
+        _plot_series(data['jax_stencil'], 'JAX Baseline (Stencil)', '^')
+        _plot_series(data['ozaki_1'], 'Ozaki Scheme 1 (MatMul)', 'x')
+        _plot_series(data['ozaki_2'], 'Ozaki Scheme 2 (Modular)', 's')
         
         plt.xlabel('Data Size N')
         plt.ylabel('Relative L2 Error')

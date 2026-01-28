@@ -33,12 +33,21 @@ def _compute_scaling(A: jax.Array, B: jax.Array, moduli):
         M *= int(m)
     if M <= 2 or q <= 0:
         return 1.0, 1.0, 0, 0, M
-    target = (M / 2.0 - 1.0) / float(q)
-    k_sum = int(max(0.0, math.floor(math.log2(target)))) if target > 1.0 else 0
+
+    max_a = float(jax.device_get(jnp.max(jnp.abs(A))))
+    max_b = float(jax.device_get(jnp.max(jnp.abs(B))))
+    if max_a == 0.0 or max_b == 0.0:
+        return 1.0, 1.0, 0, 0, M
+
+    # Keep |A'| * |B'| * q < M/2 to avoid wrap-around in CRT reconstruction.
+    target = (M / 2.0 - 1.0) / (float(q) * max_a * max_b)
+    if target <= 0.0:
+        return 1.0, 1.0, 0, 0, M
+    k_sum = int(math.floor(math.log2(target)))
     kA = k_sum // 2
     kB = k_sum - kA
-    scale_A = float(2 ** kA)
-    scale_B = float(2 ** kB)
+    scale_A = float(2.0 ** kA)
+    scale_B = float(2.0 ** kB)
     return scale_A, scale_B, kA, kB, M
 
 def _crt_reconstruct_host(Cs, coeffs, M: int):
@@ -52,7 +61,7 @@ def _crt_reconstruct_host(Cs, coeffs, M: int):
     acc = (acc + half) % int(M) - half
     return jnp.array(acc, dtype=jnp.float64)
 
-def ozaki_scheme_2_solve(A: jax.Array, B: jax.Array, num_moduli: int = 6, moduli=None):
+def ozaki_scheme_2_solve(A: jax.Array, B: jax.Array, num_moduli: int = 4, moduli=None):
     """
     Implements Ozaki Scheme II (Algorithm 1 in the paper) using INT8 tensor cores.
     """
@@ -62,8 +71,8 @@ def ozaki_scheme_2_solve(A: jax.Array, B: jax.Array, num_moduli: int = 6, moduli
     
     # 1) Determine shift values (D, E) and convert FP64 to integers.
     scale_A, scale_B, _, _, M = _compute_scaling(A, B, moduli)
-    A_prime = jnp.trunc(A * scale_A).astype(jnp.int64)
-    B_prime = jnp.trunc(B * scale_B).astype(jnp.int64)
+    A_prime = jnp.round(A * scale_A).astype(jnp.int64)
+    B_prime = jnp.round(B * scale_B).astype(jnp.int64)
     
     # 2) Modular arithmetic and INT8 tensor core GEMM.
     Cs = []
