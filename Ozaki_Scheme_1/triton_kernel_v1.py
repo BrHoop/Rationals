@@ -4,7 +4,34 @@ import warnings
 try:
     import triton
     import triton.language as tl
-    from jax_triton import triton_call
+    import jax_triton.triton_lib as jtl
+    from jax_triton import triton_call as _triton_call
+
+    def _is_triton_backend_compatible() -> bool:
+        # jax_triton expects backend.get_arg_specialization on newer JAX backends.
+        # If it's missing, custom call lowering will fail during tracing/JIT.
+        backend = getattr(jtl, "backend", None)
+        if backend is not None and not hasattr(backend, "get_arg_specialization"):
+            return False
+        try:
+            # JAX lowering uses the XLA backend, which may differ from jtl.backend.
+            from jax.lib import xla_bridge
+            jax_backend = xla_bridge.get_backend()
+            if jax_backend is not None and not hasattr(jax_backend, "get_arg_specialization"):
+                return False
+        except Exception:
+            # If we can't resolve the backend, be conservative and disable.
+            return False
+        return True
+
+    if _is_triton_backend_compatible():
+        triton_call = _triton_call
+    else:
+        triton_call = None
+        warnings.warn(
+            "jax_triton backend lacks get_arg_specialization; disabling Triton matmul.",
+            RuntimeWarning,
+        )
     
     @triton.jit
     def matmul_kernel(
@@ -62,6 +89,13 @@ def triton_matmul(A: jax.Array, B: jax.Array) -> jax.Array:
         M, K = A.shape
         K2, N = B.shape
         assert K == K2, "Dimension mismatch"
+
+        def _elem_strides(arr, fallback):
+            strides = getattr(arr, "strides", None)
+            if strides is None:
+                return fallback
+            itemsize = arr.dtype.itemsize
+            return tuple(s // itemsize for s in strides)
         
         # Block sizes
         BLOCK_SIZE_M = 128
@@ -73,9 +107,17 @@ def triton_matmul(A: jax.Array, B: jax.Array) -> jax.Array:
             triton.cdiv(M, meta['BLOCK_SIZE_M']),
             triton.cdiv(N, meta['BLOCK_SIZE_N'])
         ))
+
+        stride_am, stride_ak = _elem_strides(A, (K, 1))
+        stride_bk, stride_bn = _elem_strides(B, (N, 1))
+        stride_cm, stride_cn = (N, 1)
         
         return triton_call(
             A, B,
+            M, N, K,
+            stride_am, stride_ak,
+            stride_bk, stride_bn,
+            stride_cm, stride_cn,
             kernel=matmul_kernel,
             out_shape=jax.ShapeDtypeStruct((M, N), jnp.float32),
             grid=grid,
