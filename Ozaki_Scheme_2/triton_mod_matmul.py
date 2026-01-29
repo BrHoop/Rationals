@@ -106,13 +106,25 @@ def triton_modular_matmul(A: jax.Array, B: jax.Array, modulus: int) -> jax.Array
             triton.cdiv(N, meta['BLOCK_SIZE_N'])
         ))
         
+        # Define strides for the kernel (assuming row-major layout)
+        # A: (M, K) -> stride_am = K, stride_ak = 1
+        # B: (K, N) -> stride_bk = N, stride_bn = 1
+        # C: (M, N) -> stride_cm = N, stride_cn = 1
+        stride_am, stride_ak = K, 1
+        stride_bk, stride_bn = N, 1
+        stride_cm, stride_cn = N, 1
+        
         return triton_call(
             A, B,
             kernel=modular_matmul_kernel,
             out_shape=(M, N),
             out_dtype=jnp.int32, # Output residues as int32
             grid=grid,
+            M=M, N=N, K=K,
             modulus=modulus,
+            stride_am=stride_am, stride_ak=stride_ak,
+            stride_bk=stride_bk, stride_bn=stride_bn,
+            stride_cm=stride_cm, stride_cn=stride_cn,
             BLOCK_SIZE_M=BLOCK_SIZE_M,
             BLOCK_SIZE_N=BLOCK_SIZE_N,
             BLOCK_SIZE_K=BLOCK_SIZE_K
