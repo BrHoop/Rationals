@@ -4,7 +4,34 @@ import warnings
 try:
     import triton
     import triton.language as tl
-    from jax_triton import triton_call
+    import jax_triton.triton_lib as jtl
+    from jax_triton import triton_call as _triton_call
+
+    def _is_triton_backend_compatible() -> bool:
+        # jax_triton expects backend.get_arg_specialization on newer JAX backends.
+        # If it's missing, custom call lowering will fail during tracing/JIT.
+        backend = getattr(jtl, "backend", None)
+        if backend is not None and not hasattr(backend, "get_arg_specialization"):
+            return False
+        try:
+            # JAX lowering uses the XLA backend, which may differ from jtl.backend.
+            from jax.lib import xla_bridge
+            jax_backend = xla_bridge.get_backend()
+            if jax_backend is not None and not hasattr(jax_backend, "get_arg_specialization"):
+                return False
+        except Exception:
+            # If we can't resolve the backend, be conservative and disable.
+            return False
+        return True
+
+    if _is_triton_backend_compatible():
+        triton_call = _triton_call
+    else:
+        triton_call = None
+        warnings.warn(
+            "jax_triton backend lacks get_arg_specialization; disabling Triton modular matmul.",
+            RuntimeWarning,
+        )
     
     @triton.jit
     def modular_matmul_kernel(
