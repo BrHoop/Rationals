@@ -16,6 +16,7 @@ from Ozaki_Scheme_2.ozaki_v2 import ozaki_scheme_2_solve
 # Enable x64
 jax.config.update("jax_enable_x64", True)
 
+#This is not working on H200 machine 
 def _has_tensor_cores():
     try:
         dev = jax.devices()[0]
@@ -128,7 +129,7 @@ def run_benchmark():
         }
         for order in orders
     }
-    use_ozaki = _has_tensor_cores()
+    use_ozaki = True
     if not use_ozaki:
         print("Ozaki schemes disabled: Tensor Core-capable NVIDIA GPU + Triton required.")
     
