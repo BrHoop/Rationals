@@ -32,6 +32,7 @@ try:
             "jax_triton backend lacks get_arg_specialization; disabling Triton modular matmul.",
             RuntimeWarning,
         )
+        triton_call = _triton_call # Disable the backend checks for now
     
     @triton.jit
     def modular_matmul_kernel(
