@@ -37,11 +37,11 @@ try:
     @triton.jit
     def modular_matmul_kernel(
         a_ptr, b_ptr, c_ptr,
-        M, N, K,
-        modulus,
-        stride_am, stride_ak,
-        stride_bk, stride_bn,
-        stride_cm, stride_cn,
+        M: tl.constexpr, N: tl.constexpr, K: tl.constexpr,
+        modulus: tl.constexpr,
+        stride_am: tl.constexpr, stride_ak: tl.constexpr,
+        stride_bk: tl.constexpr, stride_bn: tl.constexpr,
+        stride_cm: tl.constexpr, stride_cn: tl.constexpr,
         BLOCK_SIZE_M: tl.constexpr, BLOCK_SIZE_N: tl.constexpr, BLOCK_SIZE_K: tl.constexpr,
     ):
         """
