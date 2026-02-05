@@ -9,15 +9,21 @@ from jax import core
 from jax import ffi
 from jax.interpreters import mlir
 from jaxlib import xla_client
+
+try:
+    import jax.ffi as jffi  # JAX >= 0.4.33
+    _HAS_JAX_FFI = hasattr(jffi, "ffi_call")
+except Exception:
+    jffi = None
+    _HAS_JAX_FFI = False
+
 try:
     from jaxlib.hlo_helpers import custom_call
 except Exception:
     try:
         from jax._src.interpreters.mlir import custom_call  # type: ignore
-    except Exception as exc:
-        raise ImportError(
-            "custom_call helper not found. Try upgrading jax/jaxlib or report this error."
-        ) from exc
+    except Exception:
+        custom_call = None
 
 
 # ---- Custom call registration ----
@@ -40,12 +46,16 @@ def register_gemmul8_custom_call(lib_path: Optional[str] = None) -> None:
     f32 = lib.gemmul8_f32
     f64 = lib.gemmul8_f64
 
-    xla_client.register_custom_call_target(
-        b"gemmul8_f32", ffi.pycapsule(f32), platform="gpu"
-    )
-    xla_client.register_custom_call_target(
-        b"gemmul8_f64", ffi.pycapsule(f64), platform="gpu"
-    )
+    if _HAS_JAX_FFI and hasattr(jffi, "register_ffi_target"):
+        jffi.register_ffi_target("gemmul8_f32", ffi.pycapsule(f32), platform="gpu")
+        jffi.register_ffi_target("gemmul8_f64", ffi.pycapsule(f64), platform="gpu")
+    else:
+        xla_client.register_custom_call_target(
+            b"gemmul8_f32", ffi.pycapsule(f32), platform="gpu"
+        )
+        xla_client.register_custom_call_target(
+            b"gemmul8_f64", ffi.pycapsule(f64), platform="gpu"
+        )
 
     _registered = True
 
@@ -115,6 +125,9 @@ def _gemmul8_lowering(ctx, a, b, *, num_moduli, fastmode):
     operand_layouts = [(0, 1), (0, 1)]
     result_layouts = [(0, 1)]
 
+    if custom_call is None:
+        raise RuntimeError("custom_call helper not available in this JAX version")
+
     # Different JAX/JAXLIB versions expose slightly different custom_call helpers.
     # Try the most recent signature first, then fall back to simpler forms.
     try:
@@ -155,6 +168,26 @@ mlir.register_lowering(gemmul8_p, _gemmul8_cpu_lowering, platform="cpu")
 
 
 def gemmul8(a, b, *, num_moduli=8, fastmode=False):
+    if _HAS_JAX_FFI:
+        if a.ndim != 2 or b.ndim != 2:
+            raise ValueError("gemmul8 expects 2D matrices")
+        if a.shape[1] != b.shape[0]:
+            raise ValueError("gemmul8 shape mismatch: A.shape[1] must equal B.shape[0]")
+        if a.dtype != b.dtype:
+            raise ValueError("gemmul8 expects A and B to have the same dtype")
+        if a.dtype not in (jnp.float32, jnp.float64):
+            raise ValueError("gemmul8 supports float32 and float64 only")
+
+        target = "gemmul8_f32" if a.dtype == jnp.float32 else "gemmul8_f64"
+        opaque = _pack_descriptor(a.shape, b.shape, num_moduli, fastmode)
+        out_shape = (a.shape[0], b.shape[1])
+        result = jffi.ffi_call(
+            target,
+            result_shape_dtypes=[jax.ShapeDtypeStruct(out_shape, a.dtype)],
+            backend_config=opaque,
+        )(a, b)
+        return result
+
     return gemmul8_p.bind(a, b, num_moduli=num_moduli, fastmode=fastmode)
 
 
