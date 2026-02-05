@@ -9,7 +9,10 @@ from jax import core
 from jax import ffi
 from jax.interpreters import mlir
 from jaxlib import xla_client
-from jaxlib.hlo_helpers import custom_call
+try:
+    from jaxlib.hlo_helpers import custom_call
+except Exception:  # jaxlib>=0.4.35
+    from jax.interpreters.mlir import custom_call
 
 
 # ---- Custom call registration ----
