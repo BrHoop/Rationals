@@ -52,7 +52,7 @@ def register_gemmul8_custom_call(lib_path: Optional[str] = None) -> None:
 
 # ---- Primitive definition ----
 
-gemmul8_p = core.Primitive("gemmul8")
+gemmul8_p = core.CallPrimitive("gemmul8")
 
 
 def _gemmul8_abstract_eval(a, b, *, num_moduli, fastmode):
