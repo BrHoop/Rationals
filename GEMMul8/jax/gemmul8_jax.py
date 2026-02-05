@@ -115,15 +115,29 @@ def _gemmul8_lowering(ctx, a, b, *, num_moduli, fastmode):
     operand_layouts = [(0, 1), (0, 1)]
     result_layouts = [(0, 1)]
 
-    call = custom_call(
-        call_target_name=target,
-        result_types=[out_type],
-        operands=[a, b],
-        backend_config=opaque,
-        api_version=1,
-        operand_layouts=operand_layouts,
-        result_layouts=result_layouts,
-    )
+    # Different JAX/JAXLIB versions expose slightly different custom_call helpers.
+    # Try the most recent signature first, then fall back to simpler forms.
+    try:
+        call = custom_call(
+            call_target_name=target,
+            result_types=[out_type],
+            operands=[a, b],
+            backend_config=opaque,
+            api_version=1,
+            operand_layouts=operand_layouts,
+            result_layouts=result_layouts,
+        )
+    except Exception:
+        try:
+            call = custom_call(
+                call_target_name=target,
+                result_types=[out_type],
+                operands=[a, b],
+                backend_config=opaque,
+            )
+        except Exception:
+            # Oldest fallback: positional helper.
+            call = custom_call(target, [out_type], [a, b], opaque)
 
     return call.results
 
