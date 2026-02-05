@@ -182,10 +182,25 @@ def gemmul8(a, b, *, num_moduli=8, fastmode=False):
         target = "gemmul8_f32" if a.dtype == jnp.float32 else "gemmul8_f64"
         opaque = _pack_descriptor(a.shape, b.shape, num_moduli, fastmode)
         out_shape = (a.shape[0], b.shape[1])
+
+        # JAX 0.9+ ffi_call signature changed; detect supported kwargs.
+        import inspect
+
+        sig = inspect.signature(jffi.ffi_call)
+        kwargs = {}
+        if "backend_config" in sig.parameters:
+            kwargs["backend_config"] = opaque
+        elif "attrs" in sig.parameters:
+            kwargs["attrs"] = {"opaque": opaque}
+        else:
+            # Best-effort: pass opaque as a named attr if **kwargs accepted.
+            if any(p.kind == p.VAR_KEYWORD for p in sig.parameters.values()):
+                kwargs["opaque"] = opaque
+
         result = jffi.ffi_call(
             target,
             result_shape_dtypes=[jax.ShapeDtypeStruct(out_shape, a.dtype)],
-            backend_config=opaque,
+            **kwargs,
         )(a, b)
         return result
 
