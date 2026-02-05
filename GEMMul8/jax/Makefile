@@ -3,7 +3,11 @@ GEMMUL8_DIR ?= ..
 
 NVCC ?= $(CUDA_HOME)/bin/nvcc
 
+JAXLIB_INCLUDE ?=
 INCLUDES := -I$(GEMMUL8_DIR)/include
+ifneq ($(JAXLIB_INCLUDE),)
+INCLUDES += -I$(JAXLIB_INCLUDE)
+endif
 LIBDIR := $(GEMMUL8_DIR)/lib
 
 CXXFLAGS := -O3 -std=c++17 -Xcompiler -fPIC $(INCLUDES)
