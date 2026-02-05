@@ -51,17 +51,42 @@ def register_gemmul8_custom_call(lib_path: Optional[str] = None) -> None:
             f32 = lib.gemmul8_f32_ffi
             f64 = lib.gemmul8_f64_ffi
             # Register on multiple platform aliases to cover JAX/JAXLIB variants.
-            for platform in ("CUDA", "cuda", "gpu"):
+            # Prefer a backend-matching registration if possible.
+            try:
+                backend = jax.default_backend()
+            except Exception:
+                backend = None
+
+            platforms = [None]
+            if backend:
+                platforms.append(backend)
+                platforms.append(backend.upper())
+            platforms.extend(["CUDA", "cuda", "gpu"])
+
+            success_backend = False
+            for platform in platforms:
                 try:
-                    jffi.register_ffi_target(
-                        "gemmul8_f32", ffi.pycapsule(f32), platform=platform
-                    )
-                    jffi.register_ffi_target(
-                        "gemmul8_f64", ffi.pycapsule(f64), platform=platform
-                    )
-                    _registered_ffi = True
+                    if platform is None:
+                        jffi.register_ffi_target(
+                            "gemmul8_f32", ffi.pycapsule(f32)
+                        )
+                        jffi.register_ffi_target(
+                            "gemmul8_f64", ffi.pycapsule(f64)
+                        )
+                        success_backend = True
+                    else:
+                        jffi.register_ffi_target(
+                            "gemmul8_f32", ffi.pycapsule(f32), platform=platform
+                        )
+                        jffi.register_ffi_target(
+                            "gemmul8_f64", ffi.pycapsule(f64), platform=platform
+                        )
+                        if backend and platform in (backend, backend.upper()):
+                            success_backend = True
                 except Exception:
                     pass
+
+            _registered_ffi = success_backend
         else:
             _registered_ffi = False
     else:
