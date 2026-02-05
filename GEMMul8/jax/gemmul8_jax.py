@@ -85,17 +85,23 @@ def register_gemmul8_custom_call(lib_path: Optional[str] = None) -> None:
 
                     sig = inspect.signature(jffi.register_ffi_target)
                     kwargs = {}
+                    api_versions = [1]
+                    if "api_version" in sig.parameters:
+                        api_versions = [1, 0]
                     if platform is not None:
                         if "platform" in sig.parameters:
                             kwargs["platform"] = platform
                         elif "backend" in sig.parameters:
                             kwargs["backend"] = platform
-                    jffi.register_ffi_target(
-                        "gemmul8_f32", ffi.pycapsule(f32), **kwargs
-                    )
-                    jffi.register_ffi_target(
-                        "gemmul8_f64", ffi.pycapsule(f64), **kwargs
-                    )
+                    for api_version in api_versions:
+                        if "api_version" in sig.parameters:
+                            kwargs["api_version"] = api_version
+                        jffi.register_ffi_target(
+                            "gemmul8_f32", ffi.pycapsule(f32), **kwargs
+                        )
+                        jffi.register_ffi_target(
+                            "gemmul8_f64", ffi.pycapsule(f64), **kwargs
+                        )
                     successes.append(platform if platform is not None else "default")
                     if platform is None:
                         success_backend = True
@@ -269,6 +275,8 @@ def gemmul8(a, b, *, num_moduli=8, fastmode=False):
 
         sig = inspect.signature(jffi.ffi_call)
         kwargs = {}
+        if "api_version" in sig.parameters:
+            kwargs["api_version"] = 1
         if "backend_config" in sig.parameters:
             kwargs["backend_config"] = opaque
         elif "attrs" in sig.parameters:
