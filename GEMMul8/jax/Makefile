@@ -12,7 +12,7 @@ TARGET := libgemmul8_jax.so
 SRC := gemmul8_jax.cu
 
 LDFLAGS := -shared -L$(LIBDIR) -lgemmul8 -lcublas -lcudart -lcuda -ldl
-RPATH_FLAGS := -Xcompiler -Wl,-rpath,$(LIBDIR)
+RPATH_FLAGS := -Xlinker -rpath -Xlinker $(LIBDIR)
 
 all: $(TARGET)
 
