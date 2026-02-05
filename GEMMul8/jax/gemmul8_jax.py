@@ -13,9 +13,11 @@ from jaxlib import xla_client
 try:
     import jax.ffi as jffi  # JAX >= 0.4.33
     _HAS_JAX_FFI = hasattr(jffi, "ffi_call")
+    _HAS_JAX_FFI_REGISTER = hasattr(jffi, "register_ffi_target")
 except Exception:
     jffi = None
     _HAS_JAX_FFI = False
+    _HAS_JAX_FFI_REGISTER = False
 
 try:
     from jaxlib.hlo_helpers import custom_call
@@ -28,10 +30,11 @@ except Exception:
 
 # ---- Custom call registration ----
 _registered = False
+_registered_ffi = False
 
 
 def register_gemmul8_custom_call(lib_path: Optional[str] = None) -> None:
-    global _registered
+    global _registered, _registered_ffi
     if _registered:
         return
 
@@ -43,20 +46,24 @@ def register_gemmul8_custom_call(lib_path: Optional[str] = None) -> None:
 
     lib = ctypes.CDLL(lib_path)
 
-    if _HAS_JAX_FFI and hasattr(jffi, "register_ffi_target"):
-        f32 = lib.gemmul8_f32_ffi
-        f64 = lib.gemmul8_f64_ffi
-        # Register on multiple platform aliases to cover JAX/JAXLIB variants.
-        for platform in ("CUDA", "cuda", "gpu"):
-            try:
-                jffi.register_ffi_target(
-                    "gemmul8_f32", ffi.pycapsule(f32), platform=platform
-                )
-                jffi.register_ffi_target(
-                    "gemmul8_f64", ffi.pycapsule(f64), platform=platform
-                )
-            except Exception:
-                pass
+    if _HAS_JAX_FFI and _HAS_JAX_FFI_REGISTER:
+        if hasattr(lib, "gemmul8_f32_ffi") and hasattr(lib, "gemmul8_f64_ffi"):
+            f32 = lib.gemmul8_f32_ffi
+            f64 = lib.gemmul8_f64_ffi
+            # Register on multiple platform aliases to cover JAX/JAXLIB variants.
+            for platform in ("CUDA", "cuda", "gpu"):
+                try:
+                    jffi.register_ffi_target(
+                        "gemmul8_f32", ffi.pycapsule(f32), platform=platform
+                    )
+                    jffi.register_ffi_target(
+                        "gemmul8_f64", ffi.pycapsule(f64), platform=platform
+                    )
+                    _registered_ffi = True
+                except Exception:
+                    pass
+        else:
+            _registered_ffi = False
     else:
         f32 = lib.gemmul8_f32
         f64 = lib.gemmul8_f64
@@ -178,7 +185,7 @@ mlir.register_lowering(gemmul8_p, _gemmul8_cpu_lowering, platform="cpu")
 
 
 def gemmul8(a, b, *, num_moduli=8, fastmode=False):
-    if _HAS_JAX_FFI:
+    if _HAS_JAX_FFI and _registered_ffi:
         if a.ndim != 2 or b.ndim != 2:
             raise ValueError("gemmul8 expects 2D matrices")
         if a.shape[1] != b.shape[0]:
