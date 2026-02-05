@@ -46,45 +46,66 @@ def register_gemmul8_custom_call(lib_path: Optional[str] = None) -> None:
 
     lib = ctypes.CDLL(lib_path)
 
+    debug = os.environ.get("GEMMUL8_JAX_DEBUG") == "1"
+    errors = []
+
     if _HAS_JAX_FFI and _HAS_JAX_FFI_REGISTER:
         if hasattr(lib, "gemmul8_f32_ffi") and hasattr(lib, "gemmul8_f64_ffi"):
             f32 = lib.gemmul8_f32_ffi
             f64 = lib.gemmul8_f64_ffi
             # Register on multiple platform aliases to cover JAX/JAXLIB variants.
             # Prefer a backend-matching registration if possible.
+            backend = None
+            backend_platform = None
             try:
                 backend = jax.default_backend()
             except Exception:
                 backend = None
+            try:
+                from jax.lib import xla_bridge as xb
+
+                backend_platform = xb.get_backend().platform
+            except Exception:
+                backend_platform = None
 
             platforms = [None]
             if backend:
                 platforms.append(backend)
                 platforms.append(backend.upper())
+            if backend_platform and backend_platform not in platforms:
+                platforms.append(backend_platform)
+                platforms.append(backend_platform.upper())
             platforms.extend(["CUDA", "cuda", "gpu"])
 
             success_backend = False
             for platform in platforms:
                 try:
+                    import inspect
+
+                    sig = inspect.signature(jffi.register_ffi_target)
+                    kwargs = {}
+                    if platform is not None:
+                        if "platform" in sig.parameters:
+                            kwargs["platform"] = platform
+                        elif "backend" in sig.parameters:
+                            kwargs["backend"] = platform
+                    jffi.register_ffi_target(
+                        "gemmul8_f32", ffi.pycapsule(f32), **kwargs
+                    )
+                    jffi.register_ffi_target(
+                        "gemmul8_f64", ffi.pycapsule(f64), **kwargs
+                    )
                     if platform is None:
-                        jffi.register_ffi_target(
-                            "gemmul8_f32", ffi.pycapsule(f32)
-                        )
-                        jffi.register_ffi_target(
-                            "gemmul8_f64", ffi.pycapsule(f64)
-                        )
                         success_backend = True
-                    else:
-                        jffi.register_ffi_target(
-                            "gemmul8_f32", ffi.pycapsule(f32), platform=platform
-                        )
-                        jffi.register_ffi_target(
-                            "gemmul8_f64", ffi.pycapsule(f64), platform=platform
-                        )
-                        if backend and platform in (backend, backend.upper()):
-                            success_backend = True
-                except Exception:
-                    pass
+                    if backend and platform in (backend, backend.upper()):
+                        success_backend = True
+                    if backend_platform and platform in (
+                        backend_platform,
+                        backend_platform.upper(),
+                    ):
+                        success_backend = True
+                except Exception as exc:
+                    errors.append(f"{platform}: {exc}")
 
             _registered_ffi = success_backend
         else:
@@ -100,6 +121,16 @@ def register_gemmul8_custom_call(lib_path: Optional[str] = None) -> None:
         )
 
     _registered = True
+
+    if _HAS_JAX_FFI and _HAS_JAX_FFI_REGISTER and not _registered_ffi:
+        if debug and errors:
+            print("GEMMul8 FFI registration failed:")
+            for err in errors:
+                print("  -", err)
+        raise RuntimeError(
+            "GEMMul8 FFI registration failed for the active backend. "
+            "Set GEMMUL8_JAX_DEBUG=1 for details."
+        )
 
 
 # ---- Primitive definition ----
