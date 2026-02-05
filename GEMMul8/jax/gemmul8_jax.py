@@ -78,6 +78,7 @@ def register_gemmul8_custom_call(lib_path: Optional[str] = None) -> None:
             platforms.extend(["CUDA", "cuda", "gpu"])
 
             success_backend = False
+            successes = []
             for platform in platforms:
                 try:
                     import inspect
@@ -95,6 +96,7 @@ def register_gemmul8_custom_call(lib_path: Optional[str] = None) -> None:
                     jffi.register_ffi_target(
                         "gemmul8_f64", ffi.pycapsule(f64), **kwargs
                     )
+                    successes.append(platform if platform is not None else "default")
                     if platform is None:
                         success_backend = True
                     if backend and platform in (backend, backend.upper()):
@@ -127,10 +129,17 @@ def register_gemmul8_custom_call(lib_path: Optional[str] = None) -> None:
             print("GEMMul8 FFI registration failed:")
             for err in errors:
                 print("  -", err)
+            print("backend:", backend)
+            print("backend_platform:", backend_platform)
+            print("platforms:", platforms)
+            if "successes" in locals():
+                print("successes:", successes)
         raise RuntimeError(
             "GEMMul8 FFI registration failed for the active backend. "
             "Set GEMMUL8_JAX_DEBUG=1 for details."
         )
+    if debug and "successes" in locals():
+        print("GEMMul8 FFI registration successes:", successes)
 
 
 # ---- Primitive definition ----
