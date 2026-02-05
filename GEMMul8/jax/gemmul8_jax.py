@@ -43,13 +43,14 @@ def register_gemmul8_custom_call(lib_path: Optional[str] = None) -> None:
 
     lib = ctypes.CDLL(lib_path)
 
-    f32 = lib.gemmul8_f32
-    f64 = lib.gemmul8_f64
-
     if _HAS_JAX_FFI and hasattr(jffi, "register_ffi_target"):
+        f32 = lib.gemmul8_f32_ffi
+        f64 = lib.gemmul8_f64_ffi
         jffi.register_ffi_target("gemmul8_f32", ffi.pycapsule(f32), platform="gpu")
         jffi.register_ffi_target("gemmul8_f64", ffi.pycapsule(f64), platform="gpu")
     else:
+        f32 = lib.gemmul8_f32
+        f64 = lib.gemmul8_f64
         xla_client.register_custom_call_target(
             b"gemmul8_f32", ffi.pycapsule(f32), platform="gpu"
         )
