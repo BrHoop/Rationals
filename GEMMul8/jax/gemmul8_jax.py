@@ -11,8 +11,13 @@ from jax.interpreters import mlir
 from jaxlib import xla_client
 try:
     from jaxlib.hlo_helpers import custom_call
-except Exception:  # jaxlib>=0.4.35
-    from jax.interpreters.mlir import custom_call
+except Exception:
+    try:
+        from jax._src.interpreters.mlir import custom_call  # type: ignore
+    except Exception as exc:
+        raise ImportError(
+            "custom_call helper not found. Try upgrading jax/jaxlib or report this error."
+        ) from exc
 
 
 # ---- Custom call registration ----
