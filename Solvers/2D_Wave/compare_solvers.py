@@ -37,41 +37,33 @@ def main():
 
     # 2. PARAMETERS
     params = {
-        "Nx": 128, "Ny": 128, 
-        "Nt": 1500,
+        "Nx": 256, "Ny": 256, 
+        "Nt": 2500,
         "output_interval": 10,
-        "Xmin": -5.0, "Xmax": 5.0,
-        "Ymin": -5.0, "Ymax": 5.0,
+        "Xmin": -10.0, "Xmax": 10.0,
+        "Ymin": -10.0, "Ymax": 10.0,
         "cfl": 0.1,
         "ko_sigma": 0.75,
         "id_x0": 0.0, "id_y0": 0.0,
         "id_sigma": 0.5, "id_amp": 1.0,
-        "seed": 42
     }
 
     # 3. INITIALIZATION
-    # Reference (Standard)
     sim_ref = RefClass(params['Nx'], params['Ny'], params)
     sim_ref.initialize()
-    step_ref = sim_ref.get_stepper(1) # Step 1 at a time
+    step_ref = sim_ref.get_stepper(1)
 
-    # Ozaki (Error Feedback)
     sim_ozaki = OzakiClass(params['Nx'], params['Ny'], params)
     sim_ozaki.initialize()
     step_ozaki = sim_ozaki.get_stepper(1)
 
-    # --- SYNC INITIAL STATES ---
-    # Copy Ref -> Ozaki so they start bitwise identical
+    # --- SYNC ---
     u_start = jnp.array(sim_ref.u)
     sim_ozaki.u = u_start
     
-    # --- PREPARE STATES ---
-    # Reference State: Just u
+    # --- PREPARE STATES (Both are just U now) ---
     state_ref = sim_ref.u
-    
-    # Ozaki State: Tuple (u, residue, key)
-    # We must explicitly create this tuple for the stepper
-    state_ozaki = (sim_ozaki.u, sim_ozaki.residue, sim_ozaki.key)
+    state_ozaki = sim_ozaki.u  # <--- No tuple, just the array
 
     history_time = []
     history_l2_error = []
@@ -88,23 +80,22 @@ def main():
 
     # 4. LOOP
     for s in range(1, params['Nt'] + 1):
-        # Step Both
+        # Step Both (Simple input -> Simple output)
         state_ref = step_ref(state_ref)
         state_ozaki = step_ozaki(state_ozaki)
         
         if s % params["output_interval"] == 0:
-            # Unpack Ozaki for analysis (u is index 0)
-            u_ozaki_curr = state_ozaki[0]
-            # Reference is just state_ref
+            # --- FIX: NO UNPACKING NEEDED ---
             u_ref_curr = state_ref
+            u_ozaki_curr = state_ozaki  # The state IS the solution 'u'
             
-            # Block and Download
             u_ozaki_curr.block_until_ready()
             
             u_oz_np = np.array(u_ozaki_curr)
             u_ref_np = np.array(u_ref_curr)
             
             # Metric: Relative Error of Field 0 (Chi)
+            # Now u_oz_np is shape (2, Nx, Ny), so [0] works correctly
             diff = u_oz_np[0] - u_ref_np[0]
             ref_norm = np.linalg.norm(u_ref_np[0])
             err_norm = np.linalg.norm(diff)
@@ -116,9 +107,6 @@ def main():
             history_l2_error.append(rel_error)
             
             print(f"Step {s:4d} | Rel Error: {rel_error:.4e}")
-
-    total_time = time.time() - start_time
-    print(f"\nDone in {total_time:.2f}s")
 
     # 5. PLOT
     fig, ax = plt.subplots(1, 2, figsize=(16, 6))
