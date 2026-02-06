@@ -26,6 +26,7 @@ output/
 **/output/
 temp/
 tmp/
+*.png
 
 # --- IDE & Editors ---
 .vscode/
