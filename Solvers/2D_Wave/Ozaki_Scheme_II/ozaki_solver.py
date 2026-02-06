@@ -11,125 +11,106 @@ import jax.numpy as jnp
 from jax import lax, jit, vmap
 
 # ==============================================================================
-# 0. CONFIG & UTILS
+# 0. CONFIG
 # ==============================================================================
-
 jax.config.update("jax_enable_x64", True)
-
-# Add utils path if necessary
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
 try:
     import utils.ioxdmf as iox
 except ImportError:
-    print("Warning: utils.ioxdmf not found. File output will be skipped.")
     iox = None
 
 # ==============================================================================
-# 1. HELPER: SOMMERFELD BOUNDARY (Float64)
+# 1. HELPER: OPTIMIZED SOMMERFELD BOUNDARY
 # ==============================================================================
-
-def apply_sommerfeld_rhs(dt_u, u, X, Y, dx):
+def apply_sommerfeld_rhs_optimized(dt_u, u, dx, bc_left, bc_right, bc_bot, bc_top):
     """
-    Overwrites the Time Derivative (dt_u) at the boundaries to enforce
-    Spherical Sommerfeld Radiation conditions.
+    Maximal JAX Performance:
+    1. No geometry math (uses pre-computed inputs).
+    2. Operates only on 1D slices (O(N) complexity).
+    3. Fully fuses into the parent JIT kernel.
     """
-    # 1. Geometry (2D Arrays)
-    r = jnp.sqrt(X**2 + Y**2)
-    inv_r = jnp.where(r < 1e-12, 0.0, 1.0/r)
     
-    # Normal vectors
-    norm_x = X * inv_r
-    norm_y = Y * inv_r
-    
-    # 2. One-sided Gradients for the Boundaries
-    
-    # --- LEFT BOUNDARY (x=0) ---
-    u_left = u[:, 0, :]
-    dx_u_left = (u[:, 1, :] - u[:, 0, :]) / dx
-    dy_u_left = (jnp.roll(u, -1, axis=2)[:, 0, :] - jnp.roll(u, 1, axis=2)[:, 0, :]) / (2*dx)
-    
-    rhs_left = - (norm_x[0, :] * dx_u_left + norm_y[0, :] * dy_u_left) - u_left * inv_r[0, :]
-    dt_u = dt_u.at[:, 0, :].set(rhs_left)
+    # Helper: Fast 1D Tangential Derivative (Rolls only the edge strip)
+    def tang_deriv(u_edge):
+        # u_edge shape: (2, N_points) -> Roll along axis 1
+        return (jnp.roll(u_edge, -1, axis=1) - jnp.roll(u_edge, 1, axis=1)) / (2*dx)
 
-    # --- RIGHT BOUNDARY (x=end) ---
-    u_right = u[:, -1, :]
-    dx_u_right = (u[:, -1, :] - u[:, -2, :]) / dx
-    dy_u_right = (jnp.roll(u, -1, axis=2)[:, -1, :] - jnp.roll(u, 1, axis=2)[:, -1, :]) / (2*dx)
+    # --- LEFT BOUNDARY ---
+    nx, ny, inv_r = bc_left
+    u_at = u[:, 0, :]
+    u_in = u[:, 1, :]
     
-    rhs_right = - (norm_x[-1, :] * dx_u_right + norm_y[-1, :] * dy_u_right) - u_right * inv_r[-1, :]
-    dt_u = dt_u.at[:, -1, :].set(rhs_right)
+    dx_u = (u_in - u_at) / dx
+    dy_u = tang_deriv(u_at)
+    
+    rhs = - (nx * dx_u + ny * dy_u) - u_at * inv_r
+    dt_u = dt_u.at[:, 0, :].set(rhs)
 
-    # --- BOTTOM BOUNDARY (y=0) ---
-    u_bot = u[:, :, 0]
-    dy_u_bot = (u[:, :, 1] - u[:, :, 0]) / dx
-    dx_u_bot = (jnp.roll(u, -1, axis=1)[:, :, 0] - jnp.roll(u, 1, axis=1)[:, :, 0]) / (2*dx)
+    # --- RIGHT BOUNDARY ---
+    nx, ny, inv_r = bc_right
+    u_at = u[:, -1, :]
+    u_in = u[:, -2, :]
     
-    rhs_bot = - (norm_x[:, 0] * dx_u_bot + norm_y[:, 0] * dy_u_bot) - u_bot * inv_r[:, 0]
-    dt_u = dt_u.at[:, :, 0].set(rhs_bot)
+    dx_u = (u_at - u_in) / dx
+    dy_u = tang_deriv(u_at)
+    
+    rhs = - (nx * dx_u + ny * dy_u) - u_at * inv_r
+    dt_u = dt_u.at[:, -1, :].set(rhs)
 
-    # --- TOP BOUNDARY (y=end) ---
-    u_top = u[:, :, -1]
-    dy_u_top = (u[:, :, -1] - u[:, :, -2]) / dx
-    dx_u_top = (jnp.roll(u, -1, axis=1)[:, :, -1] - jnp.roll(u, 1, axis=1)[:, :, -1]) / (2*dx)
+    # --- BOTTOM BOUNDARY ---
+    nx, ny, inv_r = bc_bot
+    u_at = u[:, :, 0]
+    u_in = u[:, :, 1]
     
-    rhs_top = - (norm_x[:, -1] * dx_u_top + norm_y[:, -1] * dy_u_top) - u_top * inv_r[:, -1]
-    dt_u = dt_u.at[:, :, -1].set(rhs_top)
+    dy_u = (u_in - u_at) / dx
+    dx_u = tang_deriv(u_at)
+    
+    rhs = - (nx * dx_u + ny * dy_u) - u_at * inv_r
+    dt_u = dt_u.at[:, :, 0].set(rhs)
+
+    # --- TOP BOUNDARY ---
+    nx, ny, inv_r = bc_top
+    u_at = u[:, :, -1]
+    u_in = u[:, :, -2]
+    
+    dy_u = (u_at - u_in) / dx
+    dx_u = tang_deriv(u_at)
+    
+    rhs = - (nx * dx_u + ny * dy_u) - u_at * inv_r
+    dt_u = dt_u.at[:, :, -1].set(rhs)
 
     return dt_u
 
 # ==============================================================================
-# 2. BFP48 COMPRESSION UTILS (STANDARD ROUNDING)
+# 2. BFP48 COMPRESSION (Standard Rounding)
 # ==============================================================================
-
 @jit
 def float64_to_bfp48(block_32):
-    """
-    Compresses using Standard Round-to-Nearest.
-    No keys, no stochastic noise.
-    """
     max_val = jnp.max(jnp.abs(block_32))
-    
-    # Avoid log(0)
-    scale_exp = jnp.where(
-        max_val == 0,
-        0.0,
-        jnp.floor(jnp.log2((2.0**47 - 1) / max_val))
-    )
+    scale_exp = jnp.where(max_val == 0, 0.0, jnp.floor(jnp.log2((2.0**47 - 1) / max_val)))
     exponent = scale_exp.astype(jnp.int32)
-    
-    # Scale up
     scaled = block_32 * (2.0 ** scale_exp)
-    
-    # --- STANDARD ROUNDING ---
-    # Round to nearest integer
     scaled_int = jnp.floor(scaled + 0.5).astype(jnp.int64)
-    # -------------------------
     
     p0 = (scaled_int & 0xFFFF).astype(jnp.int16)
     p1 = ((scaled_int >> 16) & 0xFFFF).astype(jnp.int16)
     p2 = ((scaled_int >> 32) & 0xFFFF).astype(jnp.int16)
-    
-    mantissas = jnp.stack([p0, p1, p2], axis=-1)
-    return mantissas, exponent
+    return jnp.stack([p0, p1, p2], axis=-1), exponent
 
 @jit
 def bfp48_to_float64(mantissas, exponent):
-    """Reconstructs float64 block from BFP48 format."""
     p0 = mantissas[..., 0].astype(jnp.int64) & 0xFFFF
     p1 = mantissas[..., 1].astype(jnp.int64) & 0xFFFF
     p2 = mantissas[..., 2].astype(jnp.int64) & 0xFFFF
-    
     combined_int = p0 | (p1 << 16) | (p2 << 32)
-    
     is_neg = combined_int >= (1 << 47)
     combined_int = jnp.where(is_neg, combined_int - (1 << 48), combined_int)
-    
     return combined_int * (2.0 ** (-exponent.astype(jnp.float64)))
 
 # ==============================================================================
-# 3. JAX OZAKI KERNELS (UNCHANGED)
+# 3. ROBUST RNS KERNELS (BASE + EXTENSION)
 # ==============================================================================
-
 def extended_gcd(a, b):
     if a == 0: return b, 0, 1
     d, x1, y1 = extended_gcd(b % a, a)
@@ -186,25 +167,22 @@ def garner_reconstruction(residues, mods, garner_consts, basis, m_prod):
 
 @jit
 def ozaki_wgmma_kernel(block_in, mods_full, mods_base, mods_ext,
-                        garner_consts, basis_mod_ext,
-                        basis_full, basis_base,
+                        garner_consts, basis_mod_ext, basis_full, basis_base,
                         m_prod_full, m_prod_base, m_prod_base_mod_ext,
                         D_lap, D_ko):
-    # 1. ALIGNMENT
     max_val = jnp.max(jnp.abs(block_in))
     m_half = m_prod_base / 2.0
-    HEADROOM_BITS = 0.0
-    scale_exp = jnp.where(max_val == 0, 0.0, jnp.floor(jnp.log2(m_half / max_val)) - HEADROOM_BITS)
+    scale_exp = jnp.where(max_val == 0, 0.0, jnp.floor(jnp.log2(m_half / max_val)))
     exponent = -scale_exp.astype(jnp.int32)
     scaled_block = block_in * (2.0 ** scale_exp)
     scaled_ints = jnp.floor(scaled_block + 0.5).astype(jnp.int64) 
     regs_base = scaled_ints[None, :, :] % mods_base[:, None, None]
-
+    
     # 2. EXTEND
     regs_full = base_extension(regs_base, mods_base, mods_ext, garner_consts,
                                basis_mod_ext, basis_base, m_prod_base, m_prod_base_mod_ext)
 
-    # 3. COMPUTE (RNS Domain)
+    # 3. COMPUTE
     acc_lap_x = jnp.einsum('krc,kcy->kry', D_lap, regs_full)[:, :, 2:-2]
     acc_ko_x  = jnp.einsum('krc,kcy->kry', D_ko,  regs_full)[:, :, 2:-2]
     acc_lap_y = jnp.einsum('krc,koc->kro', regs_full, D_lap)[:, 2:-2, :]
@@ -213,24 +191,23 @@ def ozaki_wgmma_kernel(block_in, mods_full, mods_base, mods_ext,
     res_lap = (acc_lap_x + acc_lap_y) % mods_full[:, None, None]
     res_ko  = (acc_ko_x  + acc_ko_y)  % mods_full[:, None, None]
 
-    # 4. RECONSTRUCT (To Float64)
+    # 4. RECONSTRUCT
     m_prod_full_f = m_prod_full.astype(jnp.float64)
     out_lap_int = garner_reconstruction(res_lap, mods_full, garner_consts, basis_full, m_prod_full_f)
     out_ko_int  = garner_reconstruction(res_ko,  mods_full, garner_consts, basis_full, m_prod_full_f)
     
     out_lap = out_lap_int * (2.0 ** exponent)
     out_ko  = out_ko_int  * (2.0 ** exponent)
-    
     return out_lap, out_ko
 
 # ==============================================================================
-# 4. CRT CONVERTER
+# 4. CRT CONVERTER (OPTIMIZED: 7 Large Primes)
 # ==============================================================================
-
 class CrtFloatConverter:
     def __init__(self):
-        self.mods_base_list = [251, 127, 125, 121, 119, 113, 109, 107, 103]
-        self.mods_ext_list = [101, 97]
+        # OPTIMIZED: Largest 8-bit pairwise coprimes under 256 (6 for base, 1 for extension)
+        self.mods_base_list = [253, 251, 249, 247, 245, 241]
+        self.mods_ext_list = [239]
         self.mods_full_list = self.mods_base_list + self.mods_ext_list
         
         self.k_full = len(self.mods_full_list)
@@ -288,40 +265,46 @@ class CrtFloatConverter:
         self.M_prod_base_mod_ext = jnp.array(m_prod_base_mod_ext, dtype=jnp.int64)
 
 # ==============================================================================
-# 5. SOLVER (OZAKI + NLSM + CLEAN BFP48)
+# 5. SOLVER
 # ==============================================================================
-
 class NonlinearOzakiSolver:
     def __init__(self, nx, ny, params):
         xmin, xmax = params.get("Xmin", -5.0), params.get("Xmax", 5.0)
         ymin, ymax = params.get("Ymin", -5.0), params.get("Ymax", 5.0)
-        
         self.dx = (xmax - xmin) / (nx - 1)
         self.dt = params["cfl"] * self.dx
         self.sigma = params.get("ko_sigma", 0.05)
-        
         x = jnp.linspace(xmin, xmax, nx)
         y = jnp.linspace(ymin, ymax, ny)
         self.X, self.Y = jnp.meshgrid(x, y, indexing="ij")
-        
-        # --- Pre-calc for NLSM Singularity ---
         r2 = self.X**2 + self.Y**2
         self.r2_inv = jnp.where(r2 < 1e-12, 0.0, 1.0 / r2)
-        
         self.params = params
         self.nx, self.ny = nx, ny
         self.u = jnp.zeros((2, nx, ny), dtype=np.float64)
-
-        # Configs
         self.BFP_BLOCK = 32
         self.COMPUTE_BLOCK = 64 
         self.HALO = 2
         
-        # --- NO RESIDUE, NO KEYS ---
-        
         self.converter = CrtFloatConverter()
+        
+        # --- FIX: CALL PRECOMPUTE IN INIT ---
+        self._precompute_boundaries()
+        
         self._build_matrices()
         self._compiled_step = self._build_compiled_step()
+
+    def _precompute_boundaries(self):
+        """Pre-calculates all geometric factors for the Sommerfeld boundaries."""
+        def get_geom_strip(x_strip, y_strip):
+            r_s = jnp.sqrt(x_strip**2 + y_strip**2)
+            inv_r_s = jnp.where(r_s < 1e-12, 0.0, 1.0/r_s)
+            return x_strip * inv_r_s, y_strip * inv_r_s, inv_r_s
+
+        self.bc_left = get_geom_strip(self.X[0, :], self.Y[0, :])
+        self.bc_right = get_geom_strip(self.X[-1, :], self.Y[-1, :])
+        self.bc_bot = get_geom_strip(self.X[:, 0], self.Y[:, 0])
+        self.bc_top = get_geom_strip(self.X[:, -1], self.Y[:, -1])
 
     def _build_matrices(self):
         bs = self.COMPUTE_BLOCK
@@ -331,7 +314,6 @@ class NonlinearOzakiSolver:
         for r in range(bs):
             c = r + h
             D_lap[r, c-2:c+3] = coeffs_lap
-            
         D_ko = np.zeros((bs, bs + 2*h), dtype=np.int64)
         coeffs_ko = [1, -4, 6, -4, 1]
         for r in range(bs):
@@ -343,10 +325,8 @@ class NonlinearOzakiSolver:
         self.D_ko_mods  = jnp.stack([jnp.array(D_ko % m)  for m in mods_np])
 
     def initialize(self):
-        """Sets the initial Gaussian pulse."""
         x0, y0 = self.params.get("id_x0", 0.0), self.params.get("id_y0", 0.0)
         sigma, amp = self.params.get("id_sigma", 1.0), self.params.get("id_amp", 0.5)
-        
         r2 = (self.X - x0)**2 + (self.Y - y0)**2
         chi0 = amp * jnp.exp(-r2 / (sigma**2))
         pi0 = jnp.zeros_like(chi0)
@@ -356,53 +336,42 @@ class NonlinearOzakiSolver:
         c = self.converter
         d_lap = self.D_lap_mods
         d_ko = self.D_ko_mods
-        dx = self.dx
-        sigma = self.sigma
+        dx, sigma = self.dx, self.sigma
         nx, ny = self.nx, self.ny
         r2_inv = self.r2_inv
-        X, Y = self.X, self.Y
-        
-        bfp_bs = self.BFP_BLOCK
-        cmp_bs = self.COMPUTE_BLOCK
+        bfp_bs, cmp_bs = self.BFP_BLOCK, self.COMPUTE_BLOCK
         nbx_bfp, nby_bfp = nx // bfp_bs, ny // bfp_bs
         nbx_cmp, nby_cmp = nx // cmp_bs, ny // cmp_bs
         patch_size = cmp_bs + 4
         
+        # CAPTURE BOUNDARIES FOR CLOSURE
+        bc_left, bc_right = self.bc_left, self.bc_right
+        bc_bot, bc_top = self.bc_bot, self.bc_top
+        
         @jit
         def _step_internal(u_current):
-            # --- 1. COMPRESSION (STANDARD) ---
-            # No keys, no residue
-            u_reshaped = u_current.reshape(2, nbx_bfp, bfp_bs, nby_bfp, bfp_bs)
-            u_reshaped = u_reshaped.transpose(0, 1, 3, 2, 4)
+            # 1. Compress (No Keys)
+            u_reshaped = u_current.reshape(2, nbx_bfp, bfp_bs, nby_bfp, bfp_bs).transpose(0, 1, 3, 2, 4)
+            mantissas, exponents = vmap(vmap(vmap(float64_to_bfp48)))(u_reshaped)
+            u_recon = vmap(vmap(vmap(bfp48_to_float64)))(mantissas, exponents).transpose(0, 1, 3, 2, 4).reshape(2, nx, ny)
             
-            # vmap standard function (no keys needed)
-            compress_fn = vmap(vmap(vmap(float64_to_bfp48)))
-            mantissas, exponents = compress_fn(u_reshaped)
-            
-            # --- 2. DECOMPRESSION ---
-            u_recon_blocks = vmap(vmap(vmap(bfp48_to_float64)))(mantissas, exponents)
-            u_recon = u_recon_blocks.transpose(0, 1, 3, 2, 4).reshape(2, nx, ny)
-            
-            # --- 3. PHYSICS (Using u_recon) ---
+            # 2. Patching
             chi, pi = u_recon[0], u_recon[1]
-
             pad_w = ((2, 2), (2, 2))
-            # Wrap padding for patches, boundaries overwritten later
             chi_pad = jnp.pad(chi, pad_w, mode='wrap') 
             pi_pad = jnp.pad(pi, pad_w, mode='wrap')
-
+            
             chi_patches = lax.conv_general_dilated_patches(
                 chi_pad[None, :, :, None], (patch_size, patch_size), (cmp_bs, cmp_bs), padding="VALID",
                 dimension_numbers=('NHWC', 'OIHW', 'NHWC')
-            )
+            ).reshape(-1, patch_size, patch_size)
+            
             pi_patches = lax.conv_general_dilated_patches(
                 pi_pad[None, :, :, None], (patch_size, patch_size), (cmp_bs, cmp_bs), padding="VALID",
                 dimension_numbers=('NHWC', 'OIHW', 'NHWC')
-            )
+            ).reshape(-1, patch_size, patch_size)
             
-            chi_blks = chi_patches.reshape(-1, patch_size, patch_size)
-            pi_blks = pi_patches.reshape(-1, patch_size, patch_size)
-            
+            # 3. Kernel Call
             wgmma_fn = lambda b: ozaki_wgmma_kernel(
                 b, c.mods_full, c.mods_base, c.mods_ext,
                 c.garner_consts, c.basis_mod_ext, c.basis_full, c.basis_base,
@@ -410,125 +379,70 @@ class NonlinearOzakiSolver:
                 d_lap, d_ko
             )
             
-            lap_chi, diss_chi = vmap(wgmma_fn)(chi_blks)
-            _, diss_pi = vmap(wgmma_fn)(pi_blks)
+            lap_chi, diss_chi = vmap(wgmma_fn)(chi_patches)
+            _, diss_pi = vmap(wgmma_fn)(pi_patches)
             
-            lap_chi = lap_chi / (12.0 * dx**2)
-            diss_chi = diss_chi * (-sigma / 16.0)
+            lap_chi, diss_chi = lap_chi / (12.0 * dx**2), diss_chi * (-sigma / 16.0)
             diss_pi = diss_pi * (-sigma / 16.0)
             
-            # Reassemble
-            dt_chi_part = (pi_blks[:, 2:-2, 2:-2] + diss_chi)
-            dt_pi_part  = (lap_chi + diss_pi)
-            
+            # 4. Rebuild & Physics
             def rebuild_grid(patches):
-                r = patches.reshape(nbx_cmp, nby_cmp, cmp_bs, cmp_bs)
-                return r.transpose(0, 2, 1, 3).reshape(nbx_cmp*cmp_bs, nby_cmp*cmp_bs)
+                return patches.reshape(nbx_cmp, nby_cmp, cmp_bs, cmp_bs).transpose(0, 2, 1, 3).reshape(nbx_cmp*cmp_bs, nby_cmp*cmp_bs)
             
-            dt_chi = rebuild_grid(dt_chi_part)
-            dt_pi  = rebuild_grid(dt_pi_part)
+            dt_chi = rebuild_grid(pi_patches[:, 2:-2, 2:-2] + diss_chi)
+            dt_pi  = rebuild_grid(lap_chi + diss_pi) - jnp.sin(2.0 * chi) * r2_inv
             
-            # NLSM Nonlinearity (Float64)
-            nonlinear_term = -jnp.sin(2.0 * chi) * r2_inv
-            dt_pi = dt_pi + nonlinear_term
-            
-            dt_u = jnp.stack([dt_chi, dt_pi])
-            
-            # Sommerfeld Boundaries
-            dt_u = apply_sommerfeld_rhs(dt_u, u_recon, X, Y, dx)
-            
-            return dt_u
+            # 5. Optimized Boundaries (Zero Math in Loop)
+            return apply_sommerfeld_rhs_optimized(
+                jnp.stack([dt_chi, dt_pi]), u_recon, dx, bc_left, bc_right, bc_bot, bc_top
+            )
             
         return _step_internal
 
     def get_stepper(self, steps_per_call):
         @jit
         def run_scan(u):
-            # No keys, no residue, just u
-            
             def body(u_c, _):
                 dt = self.dt
-                
                 k1 = self._compiled_step(u_c)
                 k2 = self._compiled_step(u_c + 0.5*dt*k1)
                 k3 = self._compiled_step(u_c + 0.5*dt*k2)
                 k4 = self._compiled_step(u_c + dt*k3)
-                
-                u_next = u_c + (dt / 6.0) * (k1 + 2*k2 + 2*k3 + k4)
-                
-                return u_next, None
-
+                return u_c + (dt / 6.0) * (k1 + 2*k2 + 2*k3 + k4), None
             u_final, _ = lax.scan(body, u, length=steps_per_call)
             return u_final
-            
         return run_scan
 
 # ==============================================================================
-# 5. MAIN RUNNER
+# 6. MAIN
 # ==============================================================================
-
 def main(parfile, output_dir):
     if not os.path.exists(parfile):
-        print(f"Error: Parameter file {parfile} not found.")
-        # Default Params for testing
-        params = {
-            "Nx": 256, "Ny": 256, "Nt": 100, "output_interval": 10,
-            "cfl": 0.25, "ko_sigma": 0.05,
-            "id_amp": 0.8, "id_sigma": 1.5,
-        }
+        params = {"Nx": 256, "Ny": 256, "Nt": 100, "output_interval": 10, "cfl": 0.25, "ko_sigma": 0.05}
     else:
-        with open(parfile, "rb") as f:
-            params = tomllib.load(f)
-        
-    nx, ny = params["Nx"], params["Ny"]
-    if nx % 64 != 0 or ny % 64 != 0:
-        print("Error: Nx and Ny must be divisible by 64.")
-        return
-
-    nt, out_int = params["Nt"], params["output_interval"]
+        with open(parfile, "rb") as f: params = tomllib.load(f)
     
-    if os.path.exists(output_dir):
-        shutil.rmtree(output_dir)
+    nx, ny = params["Nx"], params["Ny"]
+    if nx % 64 != 0 or ny % 64 != 0: return print("Error: Nx/Ny must be div by 64")
+    
+    if os.path.exists(output_dir): shutil.rmtree(output_dir)
     os.makedirs(output_dir, exist_ok=True)
     
     sim = NonlinearOzakiSolver(nx, ny, params)
     sim.initialize()
+    step_fn = sim.get_stepper(params["output_interval"])
     
-    step_fn = sim.get_stepper(out_int)
-    names = ["chi", "pi"]
-    
-    print(f"Starting NLSM Ozaki Solver | Grid={nx}x{ny} | Method=RNS/BFP48 (Standard Rounding)")
-    
-    # 2. JIT Compilation Warmup
-    warmup_u = step_fn(sim.u)
-    warmup_u.block_until_ready()
-    print("JIT compilation complete. Running...")
-    
-    # 3. Reset
-    sim.initialize() 
+    print(f"Starting Robust Ozaki Solver (Base+Ext) | {nx}x{ny}")
+    sim.u = step_fn(sim.u) # Warmup
+    sim.initialize()
     
     start_time = time.time()
-    
-    for s in range(out_int, nt + 1, out_int):
-        # 4. Standard step (takes U, returns U)
+    for s in range(params["output_interval"], params["Nt"] + 1, params["output_interval"]):
         sim.u = step_fn(sim.u)
-        
         sim.u.block_until_ready()
-        
-        u_np = np.array(sim.u)
-        chi_norm = np.linalg.norm(u_np[0])
-        elapsed = time.time() - start_time
-        print(f"Step {s} | Time: {s*sim.dt:.3f} | |Chi|: {chi_norm:.6e} | Wall: {elapsed:.2f}s")
-        
-        if iox:
-            iox.write_hdf5(s, u_np, np.array(sim.X[:,0]), np.array(sim.Y[0,:]), names, output_dir)
-            
-    if iox:
-        iox.write_xdmf(output_dir, nt, nx, ny, names, out_int, sim.dt)
-    
-    print("Simulation Complete.")
+        print(f"Step {s} | Time: {s*sim.dt:.3f} | |Chi|: {np.linalg.norm(sim.u[0]):.6e} | Wall: {time.time()-start_time:.2f}s")
+        if iox: iox.write_hdf5(s, np.array(sim.u), np.array(sim.X[:,0]), np.array(sim.Y[0,:]), ["chi", "pi"], output_dir)
+    if iox: iox.write_xdmf(output_dir, params["Nt"], nx, ny, ["chi", "pi"], params["output_interval"], sim.dt)
 
 if __name__ == "__main__":
-    par = sys.argv[1] if len(sys.argv) > 1 else "params.toml"
-    out = sys.argv[2] if len(sys.argv) > 2 else "data_nlsm_ozaki"
-    main(par, out)
+    main(sys.argv[1] if len(sys.argv) > 1 else "params.toml", sys.argv[2] if len(sys.argv) > 2 else "data_oz")

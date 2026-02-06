@@ -37,15 +37,15 @@ def main():
 
     # 2. PARAMETERS
     params = {
-        "Nx": 256, "Ny": 256, 
+        "Nx": 512, "Ny": 512, 
         "Nt": 2500,
-        "output_interval": 10,
-        "Xmin": -10.0, "Xmax": 10.0,
-        "Ymin": -10.0, "Ymax": 10.0,
+        "output_interval": 1,
+        "Xmin": -5, "Xmax": 5,
+        "Ymin": -5, "Ymax": 5,
         "cfl": 0.1,
-        "ko_sigma": 0.75,
+        "ko_sigma": 0.2,
         "id_x0": 0.0, "id_y0": 0.0,
-        "id_sigma": 0.5, "id_amp": 1.0,
+        "id_sigma": 1.0, "id_amp": 1.0,
     }
 
     # 3. INITIALIZATION
